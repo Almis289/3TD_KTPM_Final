@@ -1,0 +1,121 @@
+﻿@model Book_Store.Models.UserProfileViewModel
+@{
+    ViewData["Title"] = "Hồ sơ của tôi";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="mb-0">👤 Hồ sơ cá nhân</h2>
+                <div>
+                    <a href="@Url.Action("EditProfile", "Account")" class="btn btn-outline-primary">
+                        <i class="fas fa-edit me-1"></i> Chỉnh sửa thông tin
+                    </a>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-4 mb-3">
+                        <img src="@Model.AvatarUrl" alt="Avatar" class="rounded-circle" style="width:96px;height:96px;object-fit:cover;">
+                        <div>
+                            <h4 class="mb-1">@Model.FullName</h4>
+                            <p class="mb-0 text-muted">@Model.Email</p>
+                            <small class="text-muted">Tạo ngày: @Model.CreatedAt.ToString("dd/MM/yyyy")</small>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6 mb-2">
+                            <h6 class="text-muted small">Số điện thoại</h6>
+                            <p class="mb-0">@(!string.IsNullOrEmpty(Model.Phone) ? Model.Phone : "-")</p>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <h6 class="text-muted small">Sản phẩm trong giỏ</h6>
+                            <p class="mb-0">@Model.CartCount</p>
+                        </div>
+                        <div class="col-12 mt-2">
+                            <h6 class="text-muted small">Địa chỉ</h6>
+                            <p class="mb-0">@(!string.IsNullOrEmpty(Model.Address) ? Model.Address : "-")</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders Summary -->
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">🧾 Đơn hàng gần đây</h5>
+                        <a asp-controller="Customer" asp-action="OrderHistory" class="btn btn-outline-secondary btn-sm">Xem tất cả</a>
+                    </div>
+
+                    @if (Model.Orders != null && Model.Orders.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Mã đơn</th>
+                                        <th>Ngày</th>
+                                        <th>Sản phẩm</th>
+                                        <th>Tổng tiền</th>
+                                        <th>Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var order in Model.Orders.Take(5))
+                                    {
+                                        var totalItems = order.OrderDetails.Sum(d => d.Quantity);
+                                        <tr>
+                                            <td><span class="badge bg-secondary">@order.OrderId</span></td>
+                                            <td>@order.OrderDate.ToString("dd/MM/yyyy")</td>
+                                            <td>@totalItems</td>
+                                            <td>@order.TotalAmount.ToString("N0") ₫</td>
+                                            <td>
+                                                @switch (order.Status)
+                                                {
+                                                    case Book_Store.Models.OrderStatus.DangXuLy:
+                                                        <span class="badge bg-warning">Đang xử lý</span>
+                                                        ;
+                                                        break;
+                                                    case Book_Store.Models.OrderStatus.DangChuanBi:
+                                                        <span class="badge bg-info">Đang chuẩn bị</span>
+                                                        ;
+                                                        break;
+                                                    case Book_Store.Models.OrderStatus.DangVanChuyen:
+                                                        <span class="badge bg-primary">Đang vận chuyển</span>
+                                                        ;
+                                                        break;
+                                                    case Book_Store.Models.OrderStatus.DaGiao:
+                                                        <span class="badge bg-success">Đã giao</span>
+                                                        ;
+                                                        break;
+                                                    case Book_Store.Models.OrderStatus.DaHuy:
+                                                        <span class="badge bg-danger">Đã hủy</span>
+                                                        ;
+                                                        break;
+                                                    default:
+                                                        <span class="badge bg-secondary">—</span>
+                                                        ;
+                                                        break;
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info mb-0">Bạn chưa có đơn hàng nào.</div>
+                    }
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

@@ -1,0 +1,118 @@
+﻿@using System.Security.Claims
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - 3TD_Book_Store</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Book_Store.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="sticky-top">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom box-shadow py-3">
+            <div class="container-fluid">
+                <a class="navbar-brand fw-bold d-flex align-items-center gap-2" asp-area="" asp-controller="Customer" asp-action="Index">
+                    <i class="bi bi-book-half fs-4 text-primary"></i>
+                    <span class="d-none d-sm-block fs-5">3TD_Store</span>
+                </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain"
+                        aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarMain">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Customer" asp-action="Index">Trang chủ</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="Privacy">Chính sách</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Customer" asp-action="ProductList">Sản phẩm</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Customer" asp-action="OrderHistory">Lịch sử mua hàng</a>
+                        </li>
+                    </ul>
+
+                    <div class="d-flex align-items-center flex-grow-1 justify-content-lg-end">
+                        <form class="d-flex mx-lg-3 my-2 my-lg-0" asp-controller="Customer" asp-action="Search" method="get">
+                            <div class="input-group">
+                                <input class="form-control border-end-0 border" type="search" placeholder="Tìm sách..." name="keyword">
+                                <button class="btn btn-outline-secondary border-start-0 border" type="submit">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </form>
+
+                        <a href="@Url.Action("Cart", "Customer")" class="btn btn-outline-primary position-relative me-3">
+                            <i class="bi bi-cart"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                @(ViewBag.CartCount ?? 0)
+                            </span>
+                        </a>
+
+                        <ul class="navbar-nav d-flex flex-row align-items-center ms-auto ms-lg-0">
+                            @if (User.Identity.IsAuthenticated)
+                            {
+                                <li class="nav-item dropdown d-flex align-items-center gap-2">
+                                    <span class="d-none d-lg-block text-dark fw-bold">
+                                        Chào, @User.FindFirst(ClaimTypes.Name)?.Value
+                                    </span>
+                                    <button class="btn btn-outline-secondary dropdown-toggle" type="button"
+                                            id="userMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-person-circle"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuButton">
+                                        <li><a class="dropdown-item" asp-controller="Account" asp-action="Profile">Thông tin tài khoản</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword">Đổi mật khẩu</a></li>
+                                        <li><hr class="dropdown-divider" /></li>
+                                        <li><a class="dropdown-item text-danger" asp-controller="Account" asp-action="Logout">Đăng xuất</a></li>
+                                    </ul>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="nav-item me-2">
+                                    <a class="btn btn-primary" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="btn btn-outline-primary" asp-controller="Account" asp-action="Register">Đăng ký</a>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container text-center py-3">
+            &copy; 2025 - Book_Store - <a asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

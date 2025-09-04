@@ -1,0 +1,98 @@
+﻿@model List<Book_Store.Models.Product>
+@{
+    Layout = "_AdminLayout";
+}
+
+<h2 class="page-title"><i class="bi bi-book"></i> Quản lý sản phẩm</h2>
+
+<div class="search-add-container">
+    <form asp-action="ProductManagement" method="get" id="searchForm" class="search-form">
+        <input type="text" name="keyword" id="searchBox"
+               placeholder="Tìm theo mã hoặc tên sản phẩm"
+               value="@ViewBag.Keyword" class="search-input" />
+    </form>
+
+    <a asp-controller="Admin" asp-action="CreateProduct" class="btn btn-primary add-product-btn">
+        Thêm sản phẩm
+    </a>
+</div>
+
+<!--Danh sách sản phẩm -->
+<table class="product-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Tên sản phẩm</th>
+            <th>Ảnh</th>
+            <th>Giá</th>
+            <th>Thể loại</th>
+            <th>Tác giả</th>
+            <th>Ngày tạo</th>
+            <th>Trạng thái</th>
+            <th>Thao tác</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Any())
+        {
+            foreach (var product in Model)
+            {
+                <tr>
+                    <td>@product.ProductId</td>
+                    <td>@product.ProductName</td>
+                    <td>
+                        <img src="@Url.Content(product.ImageUrl)" class="product-img" />
+                    </td>
+                    <td>@product.Price.ToString("N0") VND</td>
+                    <td>@product.Category?.CategoryName</td>
+                    <td>@product.Author?.AuthorName</td>
+                    <td>@product.CreatedAt.ToString("dd/MM/yyyy")</td>
+                    <td>
+                        @if (product.IsActive)
+                        {
+                            <span class="badge bg-success">Đang bán</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Ngưng bán</span>
+                        }
+                    </td>
+                    <td>
+                        <a asp-action="EditProduct" asp-route-id="@product.ProductId" class="btn-action edit">
+                            <i class="bi bi-pencil-square"></i> Sửa
+                        </a>
+                        <a asp-action="ToggleProductStatus" asp-route-id="@product.ProductId"
+                           class="btn-action delete"
+                           onclick="return confirm('Bạn có chắc muốn @(product.IsActive ? "ngưng bán" : "mở bán lại") sản phẩm này?');">
+                            <i class="bi @(product.IsActive ? "bi-slash-circle" : "bi-check-circle")"></i>
+                            @(product.IsActive ? "Ngưng bán" : "Mở bán")
+                        </a>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="9" class="text-center">Không tìm thấy sản phẩm nào phù hợp.</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script>
+        const searchBox = document.getElementById('searchBox');
+        const productResults = document.getElementById('productResults');
+
+        searchBox.addEventListener('input', function () {
+            const keyword = searchBox.value;
+
+            fetch(`/Admin/ProductSearch?keyword=${encodeURIComponent(keyword)}`)
+                .then(response => response.text())
+                .then(html => {
+                    productResults.innerHTML = html;
+                });
+        });
+    </script>
+}

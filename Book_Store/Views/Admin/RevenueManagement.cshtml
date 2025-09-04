@@ -1,0 +1,299 @@
+﻿@using System.Text.Json
+@model List<Book_Store.Models.Payment>
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Quản lý doanh thu";
+
+    // Lấy dữ liệu an toàn từ ViewBag (dynamic)
+    var monthlyRevenue = ViewBag.MonthlyRevenue as IEnumerable<object> ?? Enumerable.Empty<object>();
+    var yearlyRevenue = ViewBag.YearlyRevenue as IEnumerable<object> ?? Enumerable.Empty<object>();
+    var dailyRevenue = ViewBag.DailyRevenue as IEnumerable<object> ?? Enumerable.Empty<object>();
+    var availableYears = ViewBag.AvailableYears as IEnumerable<int> ?? Enumerable.Empty<int>();
+
+    int selectedYear;
+    if (ViewBag.SelectedYear != null) selectedYear = (int)ViewBag.SelectedYear;
+    else selectedYear = DateTime.Today.Year;
+
+    int? selectedMonth = null;
+    if (ViewBag.SelectedMonth != null)
+    {
+        // ViewBag.SelectedMonth có thể là int hoặc string, thử parse an toàn
+        try
+        {
+            selectedMonth = Convert.ToInt32(ViewBag.SelectedMonth);
+        }
+        catch
+        {
+            selectedMonth = null;
+        }
+    }
+
+    decimal totalRevenue = ViewBag.TotalRevenue != null ? Convert.ToDecimal(ViewBag.TotalRevenue) : 0m;
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4">💰 Quản lý doanh thu</h2>
+
+    <div class="mb-4 d-flex justify-content-between align-items-center">
+        <div>
+            <h4>Tổng doanh thu (đã giao): <span class="text-success">@totalRevenue.ToString("N0") VNĐ</span></h4>
+            <small class="text-muted">Chỉ tính các đơn hàng có trạng thái "Đã giao".</small>
+        </div>
+
+        <div class="d-flex align-items-center">
+            <form method="get" class="d-flex gap-2 align-items-center">
+                <label class="me-2 mb-0">Năm</label>
+                <select name="year" class="form-select form-select-sm" onchange="this.form.submit()">
+                    @if (!availableYears.Any())
+                    {
+                        <option value="@selectedYear">@selectedYear</option>
+                    }
+                    else
+                    {
+                        foreach (var y in availableYears)
+                        {
+                            if (y == selectedYear)
+                            {
+                                <option value="@y" selected="selected">@y</option>
+                            }
+                            else
+                            {
+                                <option value="@y">@y</option>
+                            }
+                        }
+                    }
+                </select>
+
+                <label class="ms-3 me-2 mb-0">Tháng</label>
+                <select name="month" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">Tất cả</option>
+                    @for (int m = 1; m <= 12; m++)
+                    {
+                        if (selectedMonth.HasValue && selectedMonth.Value == m)
+                        {
+                            <option value="@m" selected="selected">@m</option>
+                        }
+                        else
+                        {
+                            <option value="@m">@m</option>
+                        }
+                    }
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            @if (selectedMonth.HasValue)
+            {
+                <h5>📊 Doanh thu theo ngày — Tháng @selectedMonth/@selectedYear</h5>
+                <canvas id="dailyRevenueChart" width="800" height="300"></canvas>
+
+                <div class="mt-3">
+                    <h6>
+                        Tổng theo tháng:
+                        <strong>
+                            @{
+                                // Tìm tổng tháng tương ứng trong monthlyRevenue nếu có
+                                decimal monthTotal = 0m;
+                                foreach (var item in monthlyRevenue)
+                                {
+                                    var json = JsonSerializer.Serialize(item);
+                                    using var doc = JsonDocument.Parse(json);
+                                    if (doc.RootElement.TryGetProperty("Month", out var propMonth)
+                                    && doc.RootElement.TryGetProperty("Total", out var propTotal))
+                                    {
+                                        if (propMonth.GetInt32() == selectedMonth.Value)
+                                        {
+                                            monthTotal = propTotal.GetDecimal();
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            @monthTotal.ToString("N0") VNĐ
+                        </strong>
+                    </h6>
+                </div>
+            }
+            else
+            {
+                <h5>📊 Doanh thu theo tháng — Năm @selectedYear</h5>
+                <canvas id="monthlyRevenueChart" width="800" height="300"></canvas>
+            }
+
+            <hr class="my-4" />
+
+            <h5>📆 Doanh thu theo năm</h5>
+            @if (!yearlyRevenue.Any())
+            {
+                <p class="text-danger">Không có dữ liệu doanh thu theo năm.</p>
+            }
+            else
+            {
+                <canvas id="yearlyRevenueChart" width="800" height="250"></canvas>
+            }
+        </div>
+
+        <div class="col-lg-4">
+            <h5>📅 Tổng theo tháng (chi tiết năm @selectedYear)</h5>
+            <table class="table table-sm">
+                <thead><tr><th>Tháng</th><th class="text-end">Tổng</th></tr></thead>
+                <tbody>
+                    @foreach (var m in monthlyRevenue)
+                    {
+                        var json = JsonSerializer.Serialize(m);
+                        using var doc = JsonDocument.Parse(json);
+                        int mon = doc.RootElement.GetProperty("Month").GetInt32();
+                        decimal tot = doc.RootElement.GetProperty("Total").GetDecimal();
+                        <tr>
+                            <td>@mon</td>
+                            <td class="text-end">@tot.ToString("N0") VNĐ</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <hr />
+
+    <div>
+        <h5>📋 Danh sách giao dịch (năm @selectedYear @(selectedMonth.HasValue ? " - tháng " + selectedMonth.Value : ""))</h5>
+
+        @if (!Model.Any())
+        {
+            <div class="alert alert-info">Không có giao dịch trong khoảng chọn.</div>
+        }
+        else
+        {
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>User ID</th>
+                        <th class="text-end">Số tiền</th>
+                        <th>Phương thức</th>
+                        <th>Ngày thanh toán</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var payment in Model)
+                    {
+                        <tr>
+                            <td>@payment.OrderId</td>
+                            <td>@payment.UserId</td>
+                            <td class="text-end">@payment.Amount.ToString("N0") VNĐ</td>
+                            <td>@(string.IsNullOrWhiteSpace(payment.PaymentMethod) ? "-" : payment.PaymentMethod)</td>
+                            <td>@(payment.PaymentDate is DateTime dt ? dt.ToString("dd/MM/yyyy HH:mm") : "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // Serialize dữ liệu server -> client bằng System.Text.Json
+        const yearlyData = @Html.Raw(JsonSerializer.Serialize(yearlyRevenue ?? Enumerable.Empty<object>()));
+        const monthlyData = @Html.Raw(JsonSerializer.Serialize(monthlyRevenue ?? Enumerable.Empty<object>()));
+        const dailyData = @Html.Raw(JsonSerializer.Serialize(dailyRevenue ?? Enumerable.Empty<object>()));
+
+        // Vẽ biểu đồ theo năm (line)
+        (function drawYearly() {
+            const ctxYear = document.getElementById('yearlyRevenueChart')?.getContext('2d');
+            if (!ctxYear || !Array.isArray(yearlyData) || yearlyData.length === 0) return;
+
+            const labels = yearlyData.map(y => y.Year);
+            const values = yearlyData.map(y => y.Total);
+
+            new Chart(ctxYear, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Doanh thu theo năm (VNĐ)',
+                        data: values,
+                        borderColor: 'rgba(75,192,192,1)',
+                        backgroundColor: 'rgba(75,192,192,0.2)',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: v => v.toLocaleString() + ' VNĐ' }
+                        }
+                    },
+                    plugins: {
+                        tooltip: { callbacks: { label: ctx => ctx.parsed.y.toLocaleString() + ' VNĐ' } }
+                    }
+                }
+            });
+        })();
+
+        // Vẽ monthly hoặc daily tùy chọn
+        (function drawMonthlyOrDaily() {
+            const selectedMonth = @(selectedMonth.HasValue? selectedMonth.Value.ToString() : "null");
+
+            if (selectedMonth !== "null") {
+                // daily
+                const canvas = document.getElementById('dailyRevenueChart');
+                if (!canvas || !Array.isArray(dailyData)) return;
+                const labels = dailyData.map(d => 'Ngày ' + d.Day);
+                const values = dailyData.map(d => d.Total);
+
+                new Chart(canvas.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Doanh thu theo ngày (VNĐ)',
+                            data: values,
+                            backgroundColor: 'rgba(54,162,235,0.6)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: { y: { beginAtZero: true, ticks: { callback: v => v.toLocaleString() + ' VNĐ' } } },
+                        plugins: { tooltip: { callbacks: { label: ctx => ctx.parsed.y.toLocaleString() + ' VNĐ' } } }
+                    }
+                });
+            } else {
+                // monthly
+                const canvas = document.getElementById('monthlyRevenueChart');
+                if (!canvas || !Array.isArray(monthlyData)) return;
+                const labels = monthlyData.map(m => 'Tháng ' + m.Month);
+                const values = monthlyData.map(m => m.Total);
+
+                new Chart(canvas.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Doanh thu theo tháng (VNĐ)',
+                            data: values,
+                            backgroundColor: 'rgba(54,162,235,0.5)',
+                            borderColor: 'rgba(54,162,235,1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: { y: { beginAtZero: true, ticks: { callback: v => v.toLocaleString() + ' VNĐ' } } },
+                        plugins: { tooltip: { callbacks: { label: ctx => ctx.parsed.y.toLocaleString() + ' VNĐ' } } }
+                    }
+                });
+            }
+        })();
+    </script>
+}

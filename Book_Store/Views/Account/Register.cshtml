@@ -1,0 +1,62 @@
+﻿@model Book_Store.ViewModels.RegisterViewModel
+
+@{
+    ViewData["Title"] = "Đăng ký";
+}
+
+<div class="auth-container">
+    <h2>Đăng ký</h2>
+
+    @* Hiển thị lỗi tổng quát *@
+    @Html.ValidationSummary(true, "", new { @class = "text-danger mb-3" })
+
+    <form asp-action="Register" method="post" novalidate>
+        @Html.AntiForgeryToken()
+
+        <div class="form-group">
+            <label asp-for="FullName" class="form-label">Họ và tên</label>
+            <input asp-for="FullName" class="form-control" placeholder="Nguyễn Văn A" />
+            <span asp-validation-for="FullName" class="text-danger small"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Email" class="form-label">Email</label>
+            <input asp-for="Email" class="form-control" placeholder="example@domain.com" />
+            <span asp-validation-for="Email" class="text-danger small"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Password" class="form-label">Mật khẩu</label>
+            <input asp-for="Password" type="password" class="form-control" autocomplete="new-password" placeholder="Ít nhất 6 ký tự" />
+            <span asp-validation-for="Password" class="text-danger small"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="ConfirmPassword" class="form-label">Xác nhận mật khẩu</label>
+            <input asp-for="ConfirmPassword" type="password" class="form-control" autocomplete="new-password" placeholder="Nhập lại mật khẩu" />
+            <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Phone" class="form-label">Số điện thoại</label>
+            <input asp-for="Phone" class="form-control" placeholder="0123 456 789" />
+            <span asp-validation-for="Phone" class="text-danger small"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Address" class="form-label">Địa chỉ</label>
+            <textarea asp-for="Address" class="form-control" rows="2" placeholder="Số nhà, đường, phường/quận"></textarea>
+            <span asp-validation-for="Address" class="text-danger small"></span>
+        </div>
+
+        <button type="submit" class="btn btn-success mt-3">Đăng ký</button>
+
+        <div class="text-center mt-3">
+            <small>Bạn đã có tài khoản? <a asp-action="Login" asp-controller="Account">Đăng nhập</a></small>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

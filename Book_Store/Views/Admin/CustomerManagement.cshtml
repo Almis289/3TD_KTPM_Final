@@ -1,0 +1,72 @@
+﻿@model List<Book_Store.Models.User>
+@{
+    Layout = "_AdminLayout";
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+    </div>
+}
+<table class="table">
+    <thead>
+        <tr>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Trạng thái</th>
+            <th>Thao tác</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model)
+        {
+            <tr>
+                <td>@user.Email</td>
+                <td>@user.Role</td>
+                <td>@(user.IsActive ? "Hoạt động" : "Đã khóa")</td>
+                <td>
+                    <a asp-action="CustomerDetails" asp-route-id="@user.UserId" class="btn btn-info btn-sm me-1">
+                        Xem thông tin
+                    </a>
+                    @if (user.IsActive)
+                    {
+                        <a asp-action="LockCustomer" asp-route-id="@user.UserId" class="btn btn-danger">Khóa</a>
+                    }
+                    else
+                    {
+                        <a asp-action="UnlockCustomer" asp-route-id="@user.UserId" class="btn btn-success">Mở khóa</a>
+                    }
+                    <a asp-action="ResetPassword" asp-route-id="@user.UserId" class="btn btn-warning btn-sm">
+                        Đặt mật khẩu
+                    </a>
+                    @* Form xóa với AntiForgery và confirm JS *@
+                    <form asp-action="DeleteUser" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa người dùng này? Hành động không thể hoàn tác.');">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@user.UserId" />
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
+                    </form>
+                </td>
+            </tr>
+        }
+
+    </tbody>
+</table>
+@section Scripts {
+    <script>
+        // Sau 2 giây thì tự động ẩn alert
+        setTimeout(function () {
+            let alerts = document.querySelectorAll(".alert");
+            alerts.forEach(function (alert) {
+                alert.classList.remove("show"); // bootstrap fade
+                alert.classList.add("fade");
+                setTimeout(() => alert.remove(), 500); // xoá hẳn sau khi fade
+            });
+        }, 2000); // 2000ms = 2s
+    </script>
+}

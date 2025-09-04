@@ -1,0 +1,23 @@
+﻿@model Book_Store.Models.EditProfileViewModel
+
+<h2>Chỉnh sửa hồ sơ</h2>
+<form asp-action="EditProfile" method="post">
+    <input type="hidden" asp-for="UserId" />
+    <div>
+        <label>Họ tên</label>
+        <input asp-for="FullName" />
+    </div>
+    <div>
+        <label>Email</label>
+        <input asp-for="Email" />
+    </div>
+    <div>
+        <label>Địa chỉ</label>
+        <input asp-for="Address" />
+    </div>
+    <div>
+        <label>Số điện thoại</label>
+        <input asp-for="Phone" />
+    </div>
+    <button type="submit">Lưu thay đổi</button>
+</form>

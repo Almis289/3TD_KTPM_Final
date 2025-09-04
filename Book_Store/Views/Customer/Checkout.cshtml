@@ -1,0 +1,70 @@
+﻿@model List<Book_Store.Models.CartItem>
+
+@{
+    ViewBag.Title = "Thanh toán";
+    decimal total = Model.Sum(item => item.Product.Price * item.Quantity);
+}
+
+<h2 class="mb-4">🛒 Thanh toán đơn hàng</h2>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-warning">Giỏ hàng của bạn đang trống.</div>
+}
+else
+{
+    <table class="table table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>Sản phẩm</th>
+                <th>Giá</th>
+                <th>Số lượng</th>
+                <th>Thành tiền</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                var price = item.Product.Price;
+                var quantity = item.Quantity;
+                var totalItem = price * quantity;
+
+                <tr>
+                    <td>@item.Product.ProductName</td>
+                    <td>@string.Format("{0:N0} đ", price)</td>
+                    <td>@quantity</td>
+                    <td>@string.Format("{0:N0} đ", totalItem)</td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <th colspan="3" class="text-end">Tổng cộng:</th>
+                <th>@string.Format("{0:N0} đ", total)</th>
+            </tr>
+        </tfoot>
+    </table>
+
+    @using (Html.BeginForm("Checkout", "Customer", FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+
+        <div class="mb-3">
+            <label for="address" class="form-label">Địa chỉ giao hàng</label>
+            <textarea id="address" name="address" class="form-control" rows="3" required></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Phương thức thanh toán</label>
+            <select name="paymentMethod" class="form-control" required>
+                <option value="COD">COD - Thanh toán khi nhận hàng</option>
+                <option value="Chuyển khoản">Chuyển khoản khi nhận hàng</option>
+            </select>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-success">✅ Xác nhận đặt hàng</button>
+            <a asp-action="Cart" class="btn btn-secondary">🔙 Quay lại giỏ hàng</a>
+        </div>
+    }
+}

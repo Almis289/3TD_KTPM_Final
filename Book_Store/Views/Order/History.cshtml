@@ -1,0 +1,43 @@
+﻿@model List<Order>
+
+@{
+    ViewData["Title"] = "Lịch sử mua hàng";
+}
+
+<h2>Lịch sử mua hàng</h2>
+
+@if (!Model.Any())
+{
+    <p>Bạn chưa có đơn hàng nào.</p>
+}
+else
+{
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Mã đơn</th>
+                <th>Ngày đặt</th>
+                <th>Tổng tiền</th>
+                <th>Sản phẩm</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var order in Model)
+            {
+                <tr>
+                    <td>@order.OrderId</td>
+                    <td>@order.OrderDate.ToString("dd/MM/yyyy")</td>
+                    <td>@order.TotalAmount.ToString("N0") VNĐ</td>
+                    <td>
+                        <ul>
+                            @foreach (var item in order.OrderDetails)
+                            {
+                                <li>@item.Product.ProductName x @item.Quantity</li>
+                            }
+                        </ul>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
