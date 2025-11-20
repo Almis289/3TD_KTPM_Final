@@ -415,5 +415,28 @@ namespace Book_Store.Controllers
             return RedirectToAction("Profile");
         }
 
+        //Gợi ý tìm kiếm
+        [HttpGet]
+        public async Task<IActionResult> SearchSuggestions(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+                return Json(new { results = new object[0] });
+
+            query = query.ToLower();
+
+            var results = await _context.Products
+                .Where(p => p.IsActive && p.ProductName.ToLower().Contains(query))
+                .OrderBy(p => p.ProductName)
+                .Select(p => new
+                {
+                    id = p.ProductId,
+                    name = p.ProductName,
+                    image = p.ImageUrl
+                })
+                .Take(5)
+                .ToListAsync();
+
+            return Json(new { results });
+        }
     }
 }

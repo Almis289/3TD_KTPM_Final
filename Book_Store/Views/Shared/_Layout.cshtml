@@ -47,12 +47,27 @@
                     </ul>
 
                     <div class="d-flex align-items-center flex-grow-1 justify-content-lg-end">
-                        <form class="d-flex mx-lg-3 my-2 my-lg-0" asp-controller="Customer" asp-action="Search" method="get">
-                            <div class="input-group">
-                                <input class="form-control border-end-0 border" type="search" placeholder="Tìm sách..." name="keyword">
+                        <form class="d-flex mx-lg-3 my-2 my-lg-0" asp-controller="Customer" asp-action="ProductList" method="get">
+                            <div class="input-group position-relative">
+
+                                <input class="form-control border-end-0 border"
+                                       type="search"
+                                       placeholder="Tìm sách..."
+                                       name="search"
+                                       id="searchBox"
+                                       autocomplete="off"
+                                       value="@Context.Request.Query["search"]">
+
                                 <button class="btn btn-outline-secondary border-start-0 border" type="submit">
                                     <i class="bi bi-search"></i>
                                 </button>
+
+                                <!-- Khung hiển thị gợi ý -->
+                                <div id="searchResultBox"
+                                     class="list-group position-absolute w-100 bg-white shadow-sm"
+                                     style="top: 100%; z-index: 2000; display: none;">
+                                </div>
+
                             </div>
                         </form>
 
@@ -115,4 +130,61 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
+<script>
+    $(document).ready(function () {
+        let timer = null;
+
+        $("#searchBox").on("keyup", function () {
+            clearTimeout(timer);
+            let query = $(this).val().trim();
+
+            if (query.length === 0) {
+                $("#searchResultBox").hide();
+                return;
+            }
+
+            // Giảm số lần request (debounce)
+            timer = setTimeout(() => {
+                $.ajax({
+                    url: "/Customer/SearchSuggestions",
+                    method: "GET",
+                    data: { query },
+                    success: function (res) {
+                        let list = res.results;
+                        let box = $("#searchResultBox");
+
+                        if (!list || list.length === 0) {
+                            box.hide();
+                            return;
+                        }
+
+                        box.empty();
+                        list.forEach(p => {
+                            box.append(`
+                                <a href="/Customer/ProductDetail/${p.id}"
+                                   class="list-group-item list-group-item-action">
+                                   <div class="d-flex align-items-center">
+                                       <img src="${p.image}"
+                                            style="width:40px;height:40px;object-fit:cover;"
+                                            class="me-2 rounded">
+                                       <span>${p.name}</span>
+                                   </div>
+                                </a>
+                            `);
+                        });
+
+                        box.show();
+                    }
+                });
+            }, 200); // delay 200ms
+        });
+
+        // Ẩn khi click ra ngoài
+        $(document).click(function (e) {
+            if (!$(e.target).closest("#searchBox, #searchResultBox").length) {
+                $("#searchResultBox").hide();
+            }
+        });
+    });
+</script>
 </html>
