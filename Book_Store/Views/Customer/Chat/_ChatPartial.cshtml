@@ -1,0 +1,103 @@
+﻿@model Book_Store.Models.ChatSession
+
+<div id="chatHeader" style="
+    background:#4e73df;
+    color:white;
+    padding:10px;
+    font-weight:bold;
+    cursor:pointer;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+">
+    <span>Hỗ trợ khách hàng</span>
+    <button id="closeChatBtn" style="
+        background:none;
+        border:none;
+        color:white;
+        font-size:18px;
+        cursor:pointer;
+    ">
+        ×
+    </button>
+</div>
+
+<div id="chatBody" style="
+    flex:1;
+    overflow-y:auto;
+    padding:10px;
+    background:#f8f9fc;
+    height:320px;
+">
+    @foreach (var msg in Model.Messages)
+    {
+        <div class="@((msg.Sender == "User") ? "text-end" : "text-start")">
+            <span class="badge @((msg.Sender == "User") ? "bg-primary" : "bg-secondary")">@msg.Content</span>
+        </div>
+    }
+</div>
+
+<div id="chatInputWrapper" style="
+    display:flex;
+    padding:5px;
+    gap:5px;
+">
+    <input type="text" id="chatInput" class="form-control" placeholder="Nhập tin nhắn..." />
+    <button id="chatSendBtn" class="btn btn-primary">Gửi</button>
+</div>
+
+<button id="chatCloseSessionBtn" class="btn btn-danger w-100 mt-2">Kết thúc cuộc trò chuyện</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+<script>
+    (function(){
+        const sessionId = @Model.Id;
+        const sender = "User";
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/chatHub")
+            .build();
+
+        connection.start().then(()=>connection.invoke("JoinSession", sessionId));
+
+        const chatBody = document.getElementById("chatBody");
+        const input = document.getElementById("chatInput");
+        const sendBtn = document.getElementById("chatSendBtn");
+        const closeSessionBtn = document.getElementById("chatCloseSessionBtn");
+
+        connection.on("ReceiveMessage", (senderName, message) => {
+            const html = `<div class="${senderName=="User"?"text-end":"text-start"}">
+                            <span class="badge ${senderName=="User"?"bg-primary":"bg-secondary"}">${message}</span>
+                          </div>`;
+            chatBody.innerHTML += html;
+            chatBody.scrollTop = chatBody.scrollHeight;
+        });
+
+        function sendMessage(){
+            const msg = input.value;
+            if(!msg) return;
+            fetch("/Chat/SendMessage", {
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body: JSON.stringify({sessionId,sender,content:msg})
+            });
+            input.value = "";
+        }
+
+        sendBtn.addEventListener("click", sendMessage);
+        input.addEventListener("keypress", e=>{ if(e.key==="Enter") sendMessage(); });
+
+        closeSessionBtn.addEventListener("click", ()=>{
+            fetch("/Chat/Close",{
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body: JSON.stringify({id: sessionId})
+            })
+            .then(r=>r.json())
+            .then(data=>{
+                chatBody.innerHTML="";
+                connection.invoke("JoinSession", data.newSessionId);
+            });
+        });
+    })();
+</script>

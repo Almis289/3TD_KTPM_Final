@@ -145,7 +145,7 @@ namespace Book_Store.Controllers
         public async Task<IActionResult> Cart()
         {
             var userId = await GetCurrentUserIdAsync();
-            if (userId == null) return RedirectToAction("Login");
+            if (userId == null) return RedirectToAction("Login", "Account");
 
             var cartItems = await _context.CartItems
                 .Include(c => c.Product)
@@ -161,7 +161,7 @@ namespace Book_Store.Controllers
         public async Task<IActionResult> RemoveFromCart(int productId)
         {
             var userId = await GetCurrentUserIdAsync();
-            if (userId == null) return RedirectToAction("Login");
+            if (userId == null) return RedirectToAction("Login", "Account");
 
             var item = await _context.CartItems
                 .FirstOrDefaultAsync(c => c.UserId == userId.Value && c.ProductId == productId);
@@ -180,7 +180,7 @@ namespace Book_Store.Controllers
         public async Task<IActionResult> ClearCart()
         {
             var userId = await GetCurrentUserIdAsync();
-            if (userId == null) return RedirectToAction("Login");
+            if (userId == null) return RedirectToAction("Login", "Account");
 
             var items = await _context.CartItems
                 .Where(c => c.UserId == userId.Value)
@@ -200,7 +200,7 @@ namespace Book_Store.Controllers
         public async Task<IActionResult> Decrement(int productId)
         {
             var userId = await GetCurrentUserIdAsync();
-            if (userId == null) return RedirectToAction("Login");
+            if (userId == null) return RedirectToAction("Login", "Account");
 
             var item = await _context.CartItems
                 .FirstOrDefaultAsync(c => c.UserId == userId.Value && c.ProductId == productId);
@@ -225,7 +225,7 @@ namespace Book_Store.Controllers
         public async Task<IActionResult> Checkout()
         {
             var userId = await GetCurrentUserIdAsync();
-            if (userId == null) return RedirectToAction("Login");
+            if (userId == null) return RedirectToAction("Login", "Account");
 
             var cartItems = await _context.CartItems
                 .Include(c => c.Product)
@@ -243,7 +243,7 @@ namespace Book_Store.Controllers
         public async Task<IActionResult> Checkout(string address, string paymentMethod)
         {
             var userId = await GetCurrentUserIdAsync();
-            if (userId == null) return RedirectToAction("Login");
+            if (userId == null) return RedirectToAction("Login", "Account");
 
             var cartItems = await _context.CartItems
                 .Include(c => c.Product)
@@ -312,7 +312,7 @@ namespace Book_Store.Controllers
         public async Task<IActionResult> OrderHistory()
         {
             var userId = await GetCurrentUserIdAsync();
-            if (userId == null) return RedirectToAction("Login");
+            if (userId == null) return RedirectToAction("Login", "Account");
 
             var orders = await _context.Orders
                 .Include(o => o.OrderDetails)
@@ -374,7 +374,7 @@ namespace Book_Store.Controllers
         public async Task<IActionResult> EditProfile()
         {
             var userId = await GetCurrentUserIdAsync();
-            if (userId == null) return RedirectToAction("Login");
+            if (userId == null) return RedirectToAction("Login", "Account");
 
             var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId.Value);
             if (user == null) return NotFound();

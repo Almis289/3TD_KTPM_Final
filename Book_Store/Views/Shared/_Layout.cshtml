@@ -15,6 +15,7 @@
 
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Book_Store.styles.css" asp-append-version="true" />
+    
 </head>
 <body>
     <header class="sticky-top">
@@ -43,6 +44,9 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Customer" asp-action="OrderHistory">Lịch sử mua hàng</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Chat" asp-action="Chat">Trò chuyện</a>
                         </li>
                     </ul>
 
@@ -123,11 +127,15 @@
         <div class="container text-center py-3">
             &copy; 2025 - Book_Store - <a asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
+
     </footer>
+    
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 <script>

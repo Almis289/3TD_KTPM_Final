@@ -1,12 +1,25 @@
 ﻿using Book_Store.Data;
-using Microsoft.EntityFrameworkCore;
+using Book_Store.Models;
+using Book_Store.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
-using Book_Store.Models;
+using Microsoft.EntityFrameworkCore;
+using Book_Store.Hubs;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Cấu hình Email
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.AddSingleton(sp =>
+{
+    var emailSettings = builder.Configuration.GetSection("EmailSettings").Get<EmailSettings>();
+    return new EmailService(emailSettings);
+});
+
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+
+builder.Services.AddSignalR();
 
 // ✅ Thêm dịch vụ MVC
 builder.Services.AddControllersWithViews();
@@ -51,5 +64,6 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Customer}/{action=Index}/{id?}");
 
-
+// Map SignalR hub
+app.MapHub<ChatHub>("/chatHub");
 app.Run();

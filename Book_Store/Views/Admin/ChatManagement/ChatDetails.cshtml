@@ -1,0 +1,60 @@
+﻿@model Book_Store.Models.ChatSession
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Chat";
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
+<div class="container mt-3">
+    <h3>Chat với user: @Model.UserId</h3>
+
+    <div class="border rounded p-3 mb-2" style="height:400px; overflow-y:auto;" id="chatMessages">
+        @foreach (var msg in Model.Messages)
+        {
+            <div class="@((msg.Sender == "User") ? "text-start" : "text-end")">
+                <span class="badge @((msg.Sender == "User") ? "bg-primary" : "bg-secondary")">@msg.Content</span>
+            </div>
+        }
+    </div>
+
+    <div class="d-flex mb-2">
+        <input type="text" class="form-control me-2" id="messageInput" placeholder="Nhập tin nhắn..." />
+        <button class="btn btn-success" id="sendBtn">Gửi</button>
+    </div>
+</div>
+
+<script>
+    let sessionId = @Model.Id;
+    const sender = "Manager";
+
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/chatHub")
+        .build();
+
+    connection.start().then(() => connection.invoke("JoinSession", sessionId));
+
+    connection.on("ReceiveMessage", (senderName, message) => {
+        const box = document.getElementById("chatMessages");
+        const html = `<div class="${senderName=="User"?"text-start":"text-end"}">
+                        <span class="badge ${senderName=="User"?"bg-primary":"bg-secondary"}">${message}</span>
+                      </div>`;
+        box.innerHTML += html;
+        box.scrollTop = box.scrollHeight;
+    });
+
+    function sendMessage() {
+        const msg = document.getElementById("messageInput").value;
+        if (!msg) return;
+        fetch("/ChatManagement/SendMessage", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({ sessionId, sender, content: msg })
+        });
+        document.getElementById("messageInput").value = "";
+    }
+
+    document.getElementById("sendBtn").addEventListener("click", sendMessage);
+    document.getElementById("messageInput").addEventListener("keypress", e => { if(e.key==="Enter") sendMessage(); });
+</script>

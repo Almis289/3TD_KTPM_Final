@@ -22,6 +22,10 @@ namespace Book_Store.Data
         public DbSet<Payment> Payments { get; set; }
         public DbSet<PaymentHistory> PaymentHistories { get; set; }
 
+        public DbSet<ChatSession> ChatSessions { get; set; } = null!;
+        public DbSet<ChatMessage> ChatMessages { get; set; } = null!;
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

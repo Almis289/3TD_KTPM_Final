@@ -5,10 +5,12 @@ using Book_Store.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Book_Store.Services;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace BookStore.Controllers
 {
@@ -17,11 +19,14 @@ namespace BookStore.Controllers
     {
         private readonly BookStoreDbContext _context;
         private readonly IPasswordHasher<User> _passwordHasher;
+        private readonly EmailService _emailService;
 
-        public AdminController(BookStoreDbContext context, IPasswordHasher<User> passwordHasher)
+
+        public AdminController(BookStoreDbContext context, IPasswordHasher<User> passwordHasher, EmailService emailService)
         {
             _context = context;
             _passwordHasher = passwordHasher;
+            _emailService = emailService;
         }
 
 
@@ -58,6 +63,7 @@ namespace BookStore.Controllers
             ViewBag.Keyword = keyword;
             return View(query.ToList());
         }
+
         [HttpGet]
         public IActionResult CreateProduct()
         {
@@ -69,7 +75,7 @@ namespace BookStore.Controllers
         }
 
         [HttpPost]
-        public IActionResult CreateProduct(ProductViewModel model)
+        public async Task<IActionResult> CreateProduct(ProductViewModel model)
         {
             if (ModelState.IsValid)
             {
@@ -129,6 +135,8 @@ namespace BookStore.Controllers
 
                 _context.ProductDetails.Add(productDetail);
                 _context.SaveChanges();
+                
+
 
                 return RedirectToAction("ProductManagement");
             }
@@ -210,6 +218,11 @@ namespace BookStore.Controllers
                     }
 
                     product.ImageUrl = "/images/" + fileName;
+                }
+                else
+                {
+                    // KHÔNG chọn ảnh mới → giữ lại ảnh cũ
+                    product.ImageUrl = model.ImageUrl;
                 }
                 if (product.ProductDetail == null)
                 {
