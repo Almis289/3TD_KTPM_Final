@@ -19,5 +19,9 @@ namespace Book_Store.Models
         public string Status { get; set; } = null!;  // e.g., Success, Failed
 
         public string? Notes { get; set; }
+
+        public string? PaypalTransactionId { get; set; }
+
+
     }
 }

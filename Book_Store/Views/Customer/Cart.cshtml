@@ -2,10 +2,9 @@
 
 @{
     ViewBag.Title = "Giỏ hàng";
-    decimal total = Model.Sum(item => item.Product.Price * item.Quantity);
 }
 
-<h2>🛒 Giỏ hàng</h2>
+<h2 class="mb-4">🛒 Giỏ hàng</h2>
 
 @if (!Model.Any())
 {
@@ -14,73 +13,171 @@
 }
 else
 {
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Sản phẩm</th>
-                <th>Giá</th>
-                <th>Số lượng</th>
-                <th>Thành tiền</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model)
-            {
-                var gia = item.Product.Price.ToString("N0") + " đ";
-                var thanhTien = (item.Product.Price * item.Quantity).ToString("N0") + " đ";
-                <tr>
-                    <td>@item.Product.ProductName</td>
-                    <td>@gia</td>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <!-- Nút "-" -->
-                            <form asp-controller="Customer" asp-action="Decrement" method="post" class="me-1">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="productId" value="@item.Product.ProductId" />
-                                <button type="submit" class="btn btn-sm btn-outline-secondary">-</button>
-                            </form>
+    <div class="row">
+        <!-- LEFT: Danh sách sản phẩm -->
+        <div class="col-md-8">
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>Chọn</th>
+                        <th>Sản phẩm</th>
+                        <th>Giá</th>
+                        <th>Số lượng</th>
+                        <th>Thành tiền</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        var thanhTien = item.Product.Price * item.Quantity;
 
-                            <!-- Hiển thị số lượng -->
-                            <span>@item.Quantity</span>
+                        <tr>
+                            <!-- CHECKBOX -->
+                            <td class="text-center">
+                                <input type="checkbox"
+                                       class="select-item"
+                                       value="@item.ProductId"
+                                       data-name="@item.Product.ProductName"
+                                       data-price="@item.Product.Price"
+                                       data-qty="@item.Quantity" />
+                            </td>
 
-                            <!-- Nút "+" (nếu muốn tăng số lượng) -->
-                            <form asp-controller="Customer" asp-action="AddToCart" method="post" class="ms-1">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="productId" value="@item.Product.ProductId" />
-                                <input type="hidden" name="quantity" value="1" />
-                                <button type="submit" class="btn btn-sm btn-outline-secondary">+</button>
-                            </form>
-                        </div>
-                    </td>
-                    <td>@thanhTien</td>
-                    <td>
-                        <form asp-controller="Customer"
-                              asp-action="RemoveFromCart"
-                              method="post" class="d-inline">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="productId" value="@item.Product.ProductId" />
-                            <button type="submit" class="btn btn-sm btn-danger">Xoá</button>
-                        </form>
-                    </td>
-                </tr>
-            }
-        </tbody>
-        <tfoot>
-            <tr>
-                <th colspan="3" class="text-end">Tổng cộng:</th>
-                <th>@total.ToString("N0") đ</th>
-                <th>
-                    <form asp-controller="Customer" asp-action="ClearCart" method="post" class="d-inline">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-outline-danger btn-sm">Xoá toàn bộ</button>
+                            <td>
+                                <img src="@item.Product.ImageUrl" width="60" class="me-2" />
+                                @item.Product.ProductName
+                            </td>
+
+                            <td>@item.Product.Price.ToString("N0") đ</td>
+
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <form asp-action="Decrement" method="post" class="me-1">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="productId" value="@item.Product.ProductId" />
+                                        <button class="btn btn-sm btn-outline-secondary">-</button>
+                                    </form>
+
+                                    <span>@item.Quantity</span>
+
+                                    <form asp-action="AddToCart" method="post" class="ms-1">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="productId" value="@item.Product.ProductId" />
+                                        <input type="hidden" name="quantity" value="1" />
+                                        <button class="btn btn-sm btn-outline-secondary">+</button>
+                                    </form>
+                                </div>
+                            </td>
+
+                            <td>@thanhTien.ToString("N0") đ</td>
+
+                            <td>
+                                <form asp-action="RemoveFromCart" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="productId" value="@item.Product.ProductId" />
+                                    <button class="btn btn-danger btn-sm">Xóa</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- RIGHT: Hóa đơn -->
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">🧾 Hóa đơn</h5>
+                </div>
+
+                <div class="card-body">
+                    <ul id="bill-list" class="list-group mb-3"></ul>
+
+                    <h4 class="text-end">Tổng: <span id="bill-total">0 đ</span></h4>
+
+                    <!-- Form gửi danh sách sản phẩm được chọn -->
+                    <form id="checkout-selected" asp-action="Checkout" method="get">
+                        <input type="hidden" name="selected" id="selectedProducts" />
+                        <button type="submit" class="btn btn-success w-100 mt-3">
+                            Thanh toán sản phẩm đã chọn
+                        </button>
                     </form>
-                </th>
-            </tr>
-        </tfoot>
-    </table>
-
-    <div class="mt-3">
-        <a asp-action="Checkout" class="btn btn-success">Thanh toán</a>
-        <a asp-action="ProductList" class="btn btn-secondary">Tiếp tục mua sắm</a>
+                </div>
+            </div>
+        </div>
     </div>
 }
+
+<script>
+    const checkboxes = document.querySelectorAll(".select-item");
+    const billList = document.getElementById("bill-list");
+    const billTotal = document.getElementById("bill-total");
+    const selectedInput = document.getElementById("selectedProducts");
+
+    function updateBill() {
+        billList.innerHTML = "";
+        let total = 0;
+        let selectedIds = [];
+
+        checkboxes.forEach(cb => {
+            if (cb.checked) {
+                const name = cb.dataset.name;
+                const price = parseInt(cb.dataset.price);
+                const qty = parseInt(cb.dataset.qty);
+                const itemTotal = price * qty;
+
+                selectedIds.push(cb.value);
+                total += itemTotal;
+
+                billList.innerHTML += `
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>${name} (x${qty})</span>
+                        <strong>${itemTotal.toLocaleString()} đ</strong>
+                    </li>
+                `;
+            }
+        });
+
+        billTotal.innerText = total.toLocaleString() + " đ";
+
+        selectedInput.value = selectedIds.join(",");
+    }
+
+    checkboxes.forEach(cb => cb.addEventListener("change", updateBill));
+</script>
+<script>
+    function saveSelected() {
+        const selected = [];
+        document.querySelectorAll(".select-item:checked").forEach(cb => {
+            selected.push(cb.value);
+        });
+
+        fetch('/Customer/SaveSelected', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(selected)
+        });
+    }
+
+    checkboxes.forEach(cb => {
+        cb.addEventListener("change", () => {
+            updateBill();
+            saveSelected();
+        });
+    });
+
+    // ⭐ TẢI TRẠNG THÁI ĐƯỢC CHỌN
+    fetch('/Customer/GetSelected')
+        .then(res => res.json())
+        .then(ids => {
+            checkboxes.forEach(cb => {
+                if (ids.includes(parseInt(cb.value))) {
+                    cb.checked = true;
+                }
+            });
+            updateBill();
+        });
+</script>
+
+

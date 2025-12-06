@@ -20,5 +20,16 @@ namespace Book_Store.Helpers
                 ? default
                 : JsonConvert.DeserializeObject<T>(json);
         }
+
+        // LƯU DANH SÁCH PRODUCT ĐƯỢC CHỌN
+        public static List<int> GetSelectedProducts(this ISession session)
+        {
+            return session.GetObject<List<int>>("SelectedProducts") ?? new List<int>();
+        }
+
+        public static void SaveSelectedProducts(this ISession session, List<int> ids)
+        {
+            session.SetObject("SelectedProducts", ids);
+        }
     }
 }

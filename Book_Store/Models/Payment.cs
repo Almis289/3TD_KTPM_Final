@@ -27,6 +27,10 @@ namespace Book_Store.Models
 
         public DateTime PaymentDate { get; set; } = DateTime.UtcNow;
 
+        public string? PaypalOrderId { get; set; }
+        public string? PaypalPayerId { get; set; }
+
+
         public ICollection<PaymentHistory> PaymentHistories { get; set; } = new List<PaymentHistory>();
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Book_Store.Data;
+using Book_Store.Helpers;
 using Book_Store.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -227,10 +228,13 @@ namespace Book_Store.Controllers
             var userId = await GetCurrentUserIdAsync();
             if (userId == null) return RedirectToAction("Login", "Account");
 
+            var selectedIds = HttpContext.Session.GetSelectedProducts();
+
             var cartItems = await _context.CartItems
                 .Include(c => c.Product)
-                .Where(c => c.UserId == userId.Value)
+                .Where(c => c.UserId == userId.Value && selectedIds.Contains(c.ProductId))
                 .ToListAsync();
+
 
             if (!cartItems.Any())
                 return RedirectToAction("Cart");
@@ -240,21 +244,24 @@ namespace Book_Store.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Checkout(string address, string paymentMethod)
+        public async Task<IActionResult> Checkout(string address, string selected, string paymentMethod)
         {
             var userId = await GetCurrentUserIdAsync();
             if (userId == null) return RedirectToAction("Login", "Account");
 
+            var selectedIds = HttpContext.Session.GetSelectedProducts();
+
+
             var cartItems = await _context.CartItems
                 .Include(c => c.Product)
-                .Where(c => c.UserId == userId.Value)
+                .Where(c => c.UserId == userId.Value && selectedIds.Contains(c.ProductId))
                 .ToListAsync();
 
             if (!cartItems.Any())
                 return RedirectToAction("Cart");
 
             decimal totalAmount = cartItems.Sum(c => c.Product.Price * c.Quantity);
-            
+
             if (string.IsNullOrWhiteSpace(paymentMethod))
             {
                 paymentMethod = "COD";
@@ -308,6 +315,7 @@ namespace Book_Store.Controllers
 
             return RedirectToAction("OrderHistory");
         }
+
         [Authorize]
         public async Task<IActionResult> OrderHistory()
         {
@@ -438,5 +446,182 @@ namespace Book_Store.Controllers
 
             return Json(new { results });
         }
+
+        [HttpPost]
+        public async Task<IActionResult> AjaxIncrement(int productId)
+        {
+            var userId = await GetCurrentUserIdAsync();
+            if (userId == null) return Json(new { success = false });
+
+            var item = await _context.CartItems
+                .Include(c => c.Product)
+                .FirstOrDefaultAsync(c => c.UserId == userId && c.ProductId == productId);
+
+            if (item == null) return Json(new { success = false });
+
+            item.Quantity += 1;
+            await _context.SaveChangesAsync();
+
+            return Json(new
+            {
+                success = true,
+                qty = item.Quantity,
+                itemTotal = item.Quantity * item.Product.Price
+            });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AjaxDecrement(int productId)
+        {
+            var userId = await GetCurrentUserIdAsync();
+            if (userId == null) return Json(new { success = false });
+
+            var item = await _context.CartItems
+                .Include(c => c.Product)
+                .FirstOrDefaultAsync(c => c.UserId == userId && c.ProductId == productId);
+
+            if (item == null) return Json(new { success = false });
+
+            bool removed = false;
+
+            if (item.Quantity > 1)
+            {
+                item.Quantity -= 1;
+            }
+            else
+            {
+                removed = true;
+                _context.CartItems.Remove(item);
+
+                // XÔA KHỎI DANH SÁCH ĐƯỢC CHỌN
+                var selected = HttpContext.Session.GetSelectedProducts();
+                selected.Remove(productId);
+                HttpContext.Session.SaveSelectedProducts(selected);
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Json(new
+            {
+                success = true,
+                removed,
+                qty = removed ? 0 : item.Quantity,
+                itemTotal = removed ? 0 : item.Quantity * item.Product.Price
+            });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AjaxRemove(int productId)
+        {
+            var userId = await GetCurrentUserIdAsync();
+            if (userId == null) return Json(new { success = false });
+
+            var item = await _context.CartItems
+                .FirstOrDefaultAsync(c => c.UserId == userId && c.ProductId == productId);
+
+            if (item == null) return Json(new { success = false });
+
+            _context.CartItems.Remove(item);
+
+            // ⭐ XÓA KHỎI DANH SÁCH ĐƯỢC CHỌN
+            var selected = HttpContext.Session.GetSelectedProducts();
+            selected.Remove(productId);
+            HttpContext.Session.SaveSelectedProducts(selected);
+
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        public IActionResult SaveSelected([FromBody] List<int> ids)
+        {
+            HttpContext.Session.SaveSelectedProducts(ids);
+            return Ok();
+        }
+
+        [HttpGet]
+        public IActionResult GetSelected()
+        {
+            var ids = HttpContext.Session.GetSelectedProducts();
+            return Json(ids);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> PaypalSuccess([FromBody] PaypalPaymentModel data)
+        {
+            var userId = await GetCurrentUserIdAsync();
+            if (userId == null)
+                return Unauthorized();
+
+            // LẤY GIỎ HÀNG ĐÃ CHỌN
+            var selected = HttpContext.Session.GetSelectedProducts();
+
+            var cartItems = await _context.CartItems
+                .Include(c => c.Product)
+                .Where(c => c.UserId == userId && selected.Contains(c.ProductId))
+                .ToListAsync();
+
+            if (!cartItems.Any())
+                return BadRequest("Cart is empty");
+
+            decimal totalAmount = cartItems.Sum(c => c.Product.Price * c.Quantity);
+
+            // Tạo Order
+            var order = new Order
+            {
+                UserId = userId.Value,
+                OrderDate = DateTime.UtcNow,
+                Status = OrderStatus.DangXuLy,
+                TotalAmount = totalAmount,
+                ShippingAddress = data.shippingAddress // ⭐ thêm địa chỉ
+            };
+            _context.Orders.Add(order);
+            await _context.SaveChangesAsync();
+
+            // Order details
+            foreach (var item in cartItems)
+            {
+                _context.OrderDetails.Add(new OrderDetail
+                {
+                    OrderId = order.OrderId,
+                    ProductId = item.ProductId,
+                    Quantity = item.Quantity,
+                    UnitPrice = item.Product.Price
+                });
+            }
+
+            // Lưu Payment
+            var payment = new Payment
+            {
+                OrderId = order.OrderId,
+                UserId = userId.Value,
+                Amount = totalAmount,
+                PaymentMethod = "PayPal",
+                PaymentDate = DateTime.UtcNow,
+                PaypalOrderId = data.orderID,
+                PaypalPayerId = data.payerID
+            };
+            _context.Payments.Add(payment);
+            await _context.SaveChangesAsync();
+
+            // Payment history
+            _context.PaymentHistories.Add(new PaymentHistory
+            {
+                PaymentId = payment.PaymentId,
+                TransactionDate = DateTime.UtcNow,
+                Status = "Success",
+                Notes = $"Thanh toán PayPal thành công: {data.orderID}"
+            });
+
+            // XÓA GIỎ HÀNG
+            _context.CartItems.RemoveRange(cartItems);
+            await _context.SaveChangesAsync();
+
+            // ⭐ Quay về Cart hoặc OrderHistory 
+            return Ok(new { success = true, redirectUrl = Url.Action("OrderHistory") });
+        }
+
+
     }
 }
