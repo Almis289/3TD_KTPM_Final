@@ -1,0 +1,95 @@
+﻿@model Book_Store.Models.EditProfileViewModel
+@{
+    ViewData["Title"] = "Chỉnh sửa thông tin cá nhân";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="d-flex align-items-center mb-4">
+                <a asp-controller="Account" asp-action="Profile" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Quay lại hồ sơ
+                </a>
+                <h2 class="ms-3 mb-0">✏️ Chỉnh sửa thông tin cá nhân</h2>
+            </div>
+
+            @using (Html.BeginForm("EditProfile", "Account", FormMethod.Post,
+                        new { enctype = "multipart/form-data", @class = "needs-validation", novalidate = "novalidate" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.UserId)
+
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <!-- Avatar hiện tại + chọn ảnh -->
+                        <div class="mb-4 text-center">
+                            <img id="avatarPreview"
+                                 src="@(string.IsNullOrWhiteSpace(Model.AvatarUrl) ? "https://cdn-icons-png.flaticon.com/512/149/149071.png" : Model.AvatarUrl)"
+                                 class="rounded-circle shadow-sm" style="width:120px;height:120px;object-fit:cover;" />
+                            <div class="mt-3">
+                                <label class="form-label fw-semibold d-block">Ảnh đại diện mới</label>
+                                <input asp-for="AvatarFile" type="file" class="form-control"
+                                       accept="image/*" />
+                                @Html.ValidationMessageFor(m => m.AvatarFile, "", new { @class = "text-danger small" })
+                                <small class="text-muted d-block mt-1">
+                                    Hỗ trợ: JPG, PNG, GIF. Tối đa 10MB.
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label class="form-label fw-semibold">Họ và tên <span class="text-danger">*</span></label>
+                                @Html.TextBoxFor(m => m.FullName, new { @class = "form-control form-control-lg", required = "required" })
+                                @Html.ValidationMessageFor(m => m.FullName, "", new { @class = "text-danger small" })
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Email</label>
+                                @Html.TextBoxFor(m => m.Email, new { @class = "form-control form-control-lg", type = "email", @readonly = "readonly" })
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Số điện thoại</label>
+                                @Html.TextBoxFor(m => m.Phone, new { @class = "form-control form-control-lg" })
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label fw-semibold">Địa chỉ</label>
+                                @Html.TextAreaFor(m => m.Address, new { @class = "form-control", rows = "3" })
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-3 pt-4 border-top mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg px-4">
+                                <i class="fas fa-save me-2"></i> Lưu thay đổi
+                            </button>
+                            <a asp-controller="Account" asp-action="Profile" class="btn btn-outline-secondary btn-lg px-4">
+                                <i class="fas fa-times me-2"></i> Hủy bỏ
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const fileInput = document.querySelector('input[name="AvatarFile"]');
+        const preview = document.getElementById('avatarPreview');
+        if (fileInput && preview) {
+            fileInput.addEventListener('change', function (e) {
+                const file = e.target.files && e.target.files[0];
+                if (!file) return;
+                if (!file.type.startsWith('image/')) { alert('Vui lòng chọn file ảnh.'); e.target.value=''; return; }
+                if (file.size > 2 * 1024 * 1024) { alert('Ảnh tối đa 2MB.'); e.target.value=''; return; }
+                const reader = new FileReader();
+                reader.onload = ev => preview.src = ev.target.result;
+                reader.readAsDataURL(file);
+            });
+        }
+    });
+</script>

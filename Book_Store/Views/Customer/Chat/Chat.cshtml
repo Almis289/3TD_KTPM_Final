@@ -1,0 +1,78 @@
+﻿@model Book_Store.Models.ChatSession
+@{
+    ViewData["Title"] = "Live Chat";
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
+<div class="container mt-3">
+    <h3>Hỗ trợ khách hàng</h3>
+
+    <div class="border rounded p-3 mb-2" style="height:400px; overflow-y:auto;" id="chatMessages">
+        @foreach (var msg in Model.Messages)
+        {
+            <div class="@((msg.Sender == "User") ? "text-end" : "text-start")">
+                <span class="badge @((msg.Sender == "User") ? "bg-primary" : "bg-secondary")">@msg.Content</span>
+            </div>
+        }
+    </div>
+
+    <div class="d-flex mb-2">
+        <input type="text" class="form-control me-2" id="messageInput" placeholder="Nhập tin nhắn..." />
+        <button class="btn btn-primary" id="sendBtn">Gửi</button>
+    </div>
+
+    <button class="btn btn-danger" id="closeBtn">Kết thúc cuộc trò chuyện</button>
+</div>
+
+<script>
+    let sessionId = @Model.Id;
+    const sender = "User";
+
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/chatHub")
+        .build();
+
+    connection.start().then(() => connection.invoke("JoinSession", sessionId));
+
+    // Nhận tin nhắn
+    connection.on("ReceiveMessage", (senderName, message) => {
+        const box = document.getElementById("chatMessages");
+        const html = `<div class="${senderName=="User"?"text-end":"text-start"}">
+                        <span class="badge ${senderName=="User"?"bg-primary":"bg-secondary"}">${message}</span>
+                      </div>`;
+        box.innerHTML += html;
+        box.scrollTop = box.scrollHeight;
+    });
+
+    // Gửi tin nhắn
+    function sendMessage() {
+        const msg = document.getElementById("messageInput").value;
+        if (!msg) return;
+        fetch("/Chat/SendMessage", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId, sender, content: msg })
+        });
+        document.getElementById("messageInput").value = "";
+    }
+
+    document.getElementById("sendBtn").addEventListener("click", sendMessage);
+    document.getElementById("messageInput").addEventListener("keypress", e => { if(e.key==="Enter") sendMessage(); });
+
+    // Đóng session
+    document.getElementById("closeBtn").addEventListener("click", () => {
+        fetch("/Chat/Close", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: sessionId })
+        })
+        .then(res => res.json())
+        .then(data => {
+            sessionId = data.newSessionId;
+            document.getElementById("chatMessages").innerHTML = "";
+            connection.invoke("JoinSession", sessionId);
+        });
+    });
+</script>

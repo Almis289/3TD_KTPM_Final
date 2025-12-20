@@ -1,0 +1,77 @@
+﻿@model Book_Store.ViewModels.CustomerDetailViewModel
+@{
+    Layout = "_AdminLayout";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>Khách hàng: @Model.FullName (@Model.Email)</h3>
+    <div>
+        <a asp-action="ResetPassword" asp-route-id="@Model.UserId" class="btn btn-warning btn-sm me-2">Đặt mật khẩu</a>
+        <a asp-action="CustomerManagement" class="btn btn-outline-secondary btn-sm">← Quay lại</a>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h5>Thông tin chung</h5>
+        <p class="mb-1"><strong>Họ tên:</strong> @Model.FullName</p>
+        <p class="mb-1"><strong>Email:</strong> @Model.Email</p>
+        <p class="mb-1"><strong>Điện thoại:</strong> @Model.Phone</p>
+        <p class="mb-1"><strong>Địa chỉ:</strong> @Model.Address</p>
+        <p class="mb-0"><strong>Trạng thái:</strong> @(Model.IsActive ? "Hoạt động" : "Đã khóa")</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h5>Lịch sử mua hàng</h5>
+
+        @if (Model.Orders == null || !Model.Orders.Any())
+        {
+            <div class="alert alert-info mb-0">Chưa có đơn hàng.</div>
+        }
+        else
+        {
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Mã đơn</th>
+                        <th>Ngày đặt</th>
+                        <th>Tổng tiền</th>
+                        <th>Trạng thái</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var o in Model.Orders)
+                    {
+                        <tr>
+                            <td>#@o.OrderId</td>
+                            <td>@o.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@o.TotalAmount.ToString("N0") ₫</td>
+                            <td>@o.Status</td>
+                            <td>
+                                <a asp-controller="Admin" asp-action="OrderDetails" asp-route-id="@o.OrderId" class="btn btn-sm btn-outline-primary">
+                                    Xem chi tiết
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success mt-3">
+        @TempData["Success"]
+        @if (TempData["NewPassword"] != null)
+        {
+            <div><strong>Mật khẩu mới (một lần):</strong> @TempData["NewPassword"]</div>
+            <small class="text-muted">Hãy lưu mật khẩu này và thông báo cho khách (hoặc yêu cầu họ đổi mật khẩu lần đầu).</small>
+        }
+    </div>
+}
+

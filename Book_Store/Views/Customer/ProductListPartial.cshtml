@@ -1,0 +1,19 @@
+﻿@model IEnumerable<Book_Store.Models.Product>
+
+<div class="row">
+    @foreach (var item in Model)
+    {
+        <div class="col-md-3 mb-4">
+            <div class="card h-100 shadow-sm">
+                <img src="@item.ImageUrl" class="card-img-top" alt="@item.ProductName"
+                     onerror="this.onerror=null;this.src='/images/default-book.png';">
+                <div class="card-body">
+                    <h6 class="card-title text-truncate">@item.ProductName</h6>
+                    <p class="card-text text-muted small">@item.Author?.AuthorName</p>
+                    <p class="text-danger fw-bold">@item.Price.ToString("N0") đ</p>
+                    <a href="@Url.Action("ProductDetail", "Customer", new { id = item.ProductId })" class="btn btn-sm btn-primary">Xem</a>
+                </div>
+            </div>
+        </div>
+    }
+</div>

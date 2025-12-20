@@ -1,0 +1,32 @@
+﻿@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="dashboard">
+    <div class="stat-card bg-users">
+        <a class="nav-link" asp-controller="Admin" asp-action="CustomerManagement">
+            <div class="icon">👥</div>
+            <h3>Tổng người dùng</h3>
+            <p>@ViewBag.TotalUsers</p>
+        </a>
+    </div>
+    <div class="stat-card bg-orders">
+        <a class="nav-link" asp-controller="Admin" asp-action="OrderManagement">
+            <div class="icon">📦</div>
+            <h3>Đơn hàng đang xử lý</h3>
+            <p>@ViewBag.PendingOrders</p>
+        </a>
+    </div>
+    <div class="stat-card bg-revenue">
+        <a class="nav-link" asp-controller="Admin" asp-action="RevenueManagement">
+            <div class="icon">💰</div>
+            <h3>Doanh thu hôm nay</h3>
+            <p>@ViewBag.TodayRevenue VNĐ</p>
+        </a>
+    </div>
+</div>
+
+
+
+
+

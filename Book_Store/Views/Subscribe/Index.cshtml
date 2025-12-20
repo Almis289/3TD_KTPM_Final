@@ -1,0 +1,32 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    ViewBag.Title = "Đăng ký nhận tin";
+}
+
+<div style="max-width:500px; margin:60px auto; padding:30px; background:white;
+            border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.1); text-align:center;">
+
+    <h2>Đăng ký nhận Email từ Book Store</h2>
+    <p>Hãy nhập email của bạn để nhận tin khuyến mãi và sản phẩm mới nhất.</p>
+
+    <form method="post" action="/Subscribe/Add" style="margin-top:20px;">
+        <input type="email" name="email" required
+               placeholder="Nhập email..."
+               style="padding:12px; width:80%; border-radius:6px; border:1px solid #ccc;">
+
+        <button type="submit"
+                style="margin-top:15px; padding:12px 30px; border:none; background:#e74c3c;
+                       color:white; font-weight:bold; border-radius:6px; cursor:pointer;">
+            Subscribe
+        </button>
+    </form>
+
+    @if (ViewBag.Message != null)
+    {
+        <p style="color:green; margin-top:15px;">@ViewBag.Message</p>
+    }
+
+</div>
+

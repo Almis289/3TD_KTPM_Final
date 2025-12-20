@@ -1,0 +1,147 @@
+﻿@model List<Book_Store.Models.Product>
+
+@{
+    ViewBag.Title = "Trang chủ";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="text-center py-5">
+    <h1 class="display-3 fw-bold">📚 3TD_BOOKS</h1>
+</div>
+
+<!-- Carousel -->
+<div class="container mb-5">
+    <div id="bookCarousel" class="carousel slide custom-carousel" data-bs-ride="carousel">
+        <div class="carousel-inner rounded shadow">
+            <div class="carousel-item active">
+                <img src="anh04.jpg" class="d-block w-100" alt="Sách mới">
+            </div>
+            <div class="carousel-item">
+                <img src="anh01.jpg" class="d-block w-100" alt="Bestseller">
+            </div>
+            <div class="carousel-item">
+                <img src="anh03.jpg" class="d-block w-100" alt="Khuyến mãi">
+            </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#bookCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon"></span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#bookCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon"></span>
+        </button>
+    </div>
+</div>
+
+<div class="text-center pb-5">
+    <a href="@Url.Action("ProductList", "Customer")" class="btn btn-warning btn-lg">
+        Khám phá ngay
+    </a>
+</div>
+
+<!-- Sách nổi bật -->
+<div class="container">
+    <h2 class="text-center mb-4">🔥 Các loại sách</h2>
+    <div class="row g-4">
+        @foreach (var book in Model)
+        {
+            <div class="col-md-3">
+                <div class="card h-100 shadow-sm">
+                    <img src="@book.ImageUrl" class="card-img-top" alt="@book.ProductName">
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">@book.ProductName</h5>
+                        <p class="card-text text-muted small">@book.Author?.AuthorName</p>
+                        <p class="mb-1">
+                            <strong>Giá:</strong> @book.Price.ToString("N0") đ
+                        </p>
+                        <a href="@Url.Action("ProductDetail", "Customer", new { id = book.ProductId })"
+                           class="btn btn-outline-dark btn-sm mt-auto">
+                            Xem chi tiết
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Banner khuyến mãi -->
+<div class="bg-info text-white text-center py-4 mt-5">
+    <h5 class="mb-2">🎁 Các khuyến mãi dành tặng</h5>
+    <p class="mb-0">Miễn phí vận chuyển cho đơn hàng từ <strong>300.000đ</strong>.</p>
+    <p class="mb-0"> Đăng nhập/Đăng ký tài khoản để đồng hành cùng chúng tôi</p>
+</div>
+
+<!-- Footer -->
+<footer class="bg-dark text-white text-center py-4 mt-5">
+    
+
+    <div class="subscribe-box" >
+        <h3>📩 Đăng ký nhận khuyến mãi</h3>
+        <p>
+            Nhập email để nhận thông báo sớm nhất về
+            <strong>khuyến mãi, sách mới & ưu đãi độc quyền</strong>.
+        </p>
+
+        <form id="subscribeForm" class="subscribe-form">
+            <input type="email"
+                   id="email"
+                   name="email"
+                   placeholder="Nhập email của bạn..."
+                   required />
+            <button type="submit">Đăng ký</button>
+        </form>
+
+        <div id="subscribeMessage" class="subscribe-message"></div>
+    </div>
+
+
+
+    <p class="mb-1">📞 Hotline: 1900 1234 | ✉️ Email: 3TD@bookstore.vn</p>
+    <p class="mb-0">© 2025 BookStore. All rights reserved.</p>
+    <div style="width:100%; max-width: 400px; margin: 0 auto;" class="text-center">
+        <h4 class="mt-2">📍 Địa chỉ cửa hàng</h4>
+        <p>87 Nguyễn Hữu Thọ, Phường Tân Hưng, Quận 7, TP.HCM</p>
+
+        <iframe src="https://www.google.com/maps?q=87+Nguyễn+Hữu+Thọ,+Tân+Hưng,+Quận+7,+Hồ+Chí+Minh&output=embed"
+                width="100%"
+                height="250"
+                style="border:0; border-radius: 10px;"
+                allowfullscreen=""
+                loading="lazy">
+        </iframe>
+    </div>
+
+</footer>
+<script>
+    document.getElementById("subscribeForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const emailInput = document.getElementById("email");
+        const messageDiv = document.getElementById("subscribeMessage");
+
+        fetch("/Subscribe/Create", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: "email=" + encodeURIComponent(emailInput.value)
+        })
+        .then(res => res.json())
+        .then(data => {
+            messageDiv.innerText = data.message;
+            messageDiv.style.color = data.success ? "green" : "red";
+
+            if (data.success) {
+                emailInput.value = "";
+            }
+        })
+        .catch(() => {
+            messageDiv.innerText = "Có lỗi xảy ra, vui lòng thử lại!";
+            messageDiv.style.color = "red";
+        });
+    });
+</script>
+
+
+
+

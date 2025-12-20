@@ -1,0 +1,75 @@
+﻿@model Book_Store.Models.Product
+
+@{
+    ViewBag.Title = "Chi tiết sách";
+
+    string productName = string.IsNullOrWhiteSpace(Model?.ProductName)
+        ? "Không rõ tên sách"
+        : Model.ProductName;
+
+    string authorName = string.IsNullOrWhiteSpace(Model?.Author?.AuthorName)
+        ? "Không rõ tác giả"
+        : Model.Author.AuthorName;
+
+    string categoryName = string.IsNullOrWhiteSpace(Model?.Category?.CategoryName)
+        ? "Không rõ thể loại"
+        : Model.Category.CategoryName;
+
+    string description = string.IsNullOrWhiteSpace(Model?.ProductDetail?.Description)
+        ? "Chưa có mô tả"
+        : Model.ProductDetail.Description;
+
+    string imageUrl = string.IsNullOrWhiteSpace(Model?.ImageUrl)
+        ? "/images/default-book.png"
+        : Model.ImageUrl;
+
+    string priceText = $"{(Model?.Price ?? 0):N0} đ"; // ✅ Format giá gọn gàng
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4 text-primary">@productName</h2>
+
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-success">@TempData["Message"]</div>
+    }
+
+    <div class="row">
+        <div class="col-md-4">
+            <img src="@imageUrl" alt="@productName" class="img-fluid rounded shadow-sm"
+                 onerror="this.onerror=null;this.src='/images/default-book.png';" />
+        </div>
+
+        <div class="col-md-8">
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><strong>Tác giả:</strong> @authorName</li>
+                <li class="list-group-item"><strong>Thể loại:</strong> @categoryName</li>
+                <li class="list-group-item"><strong>Giá:</strong> @priceText</li>
+                <li class="list-group-item"><strong>Mô tả:</strong> @description</li>
+            </ul>
+
+            @if (User != null && User.Identity != null && User.Identity.IsAuthenticated)
+            {
+                @* Dùng tag helper (đơn giản, rõ ràng) *@
+                <form asp-controller="Customer" asp-action="AddToCart" method="post" class="mt-4">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="productId" value="@(Model?.ProductId ?? 0)" />
+                    <div class="form-group mb-2">
+                        <label for="quantity" class="form-label"><strong>Số lượng:</strong></label>
+                        <input type="number" name="quantity" id="quantity" value="1" min="1" class="form-control w-25" />
+                    </div>
+                    <button type="submit" class="btn btn-success mt-2">
+                        <i class="bi bi-cart-plus"></i> Thêm vào giỏ hàng
+                    </button>
+                </form>
+            }
+            else
+            {
+                <a href="@Url.Action("Login", "Account", new { returnUrl = Url.Action("ProductDetail", "Customer", new { id = (Model != null ? Model.ProductId : 0) }) })"
+                   class="btn btn-warning mt-4">
+                    <i class="bi bi-box-arrow-in-right"></i> Đăng nhập để mua hàng
+                </a>
+            }
+        </div>
+    </div>
+</div>

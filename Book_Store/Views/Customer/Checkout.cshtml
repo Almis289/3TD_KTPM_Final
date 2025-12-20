@@ -1,0 +1,139 @@
+﻿@model IEnumerable<Book_Store.Models.CartItem>
+
+@{
+    ViewBag.Title = "Thanh toán";
+    decimal total = Model.Sum(item => item.Product.Price * item.Quantity);
+}
+
+<h2 class="mb-4">🛒 Thanh toán đơn hàng</h2>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-warning">Giỏ hàng của bạn đang trống.</div>
+}
+else
+{
+    <table class="table table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>Sản phẩm</th>
+                <th>Giá</th>
+                <th>Số lượng</th>
+                <th>Thành tiền</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                var price = item.Product.Price;
+                var quantity = item.Quantity;
+                var totalItem = price * quantity;
+
+                <tr>
+                    <td>@item.Product.ProductName</td>
+                    <td>@string.Format("{0:N0} đ", price)</td>
+                    <td>@quantity</td>
+                    <td>@string.Format("{0:N0} đ", totalItem)</td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <th colspan="3" class="text-end">Tổng cộng:</th>
+                <th>@string.Format("{0:N0} đ", total)</th>
+            </tr>
+        </tfoot>
+    </table>
+
+    @using (Html.BeginForm("Checkout", "Customer", FormMethod.Post, new { id = "checkoutForm" }))
+    {
+        @Html.AntiForgeryToken()
+
+        <div class="mb-3">
+            <label for="address" class="form-label">Địa chỉ giao hàng</label>
+            <textarea id="address" name="address" class="form-control" rows="3" required></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Phương thức thanh toán</label>
+
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="paymentMethod" value="COD" checked>
+                <label class="form-check-label">COD - Thanh toán khi nhận hàng</label>
+            </div>
+
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="paymentMethod" value="Chuyển khoản">
+                <label class="form-check-label">Chuyển khoản khi nhận hàng</label>
+            </div>
+
+            <div class="form-check">
+                <input class="form-check-input" id="paypalOption" type="radio" name="paymentMethod" value="PayPal">
+                <label class="form-check-label">Thanh toán bằng PayPal</label>
+            </div>
+        </div>
+
+        <div id="paypal-section" style="display:none;">
+            <hr />
+            <h4>Thanh toán qua PayPal</h4>
+            <div id="paypal-button-container"></div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-success">✅ Xác nhận đặt hàng</button>
+            <a asp-action="Cart" class="btn btn-secondary">🔙 Quay lại giỏ hàng</a>
+        </div>
+    }
+}
+
+<script src="https://www.paypal.com/sdk/js?client-id=AVjgnYgepESvSrzK0yWQNNvCzjfPBfycUGrtn07O5HzhxJM3S96-oF9-bJK3UuudZ9GbWb5M1vufLJPD&currency=USD"></script>
+
+<script>
+    // Hiện ẩn PayPal Section
+    const paypalOption = document.getElementById('paypalOption');
+    const paypalSection = document.getElementById('paypal-section');
+
+    document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            paypalSection.style.display = paypalOption.checked ? "block" : "none";
+        });
+    });
+
+    // PayPal Button
+    paypal.Buttons({
+        createOrder: function (data, actions) {
+            return actions.order.create({
+                purchase_units: [{
+                    amount: {
+                        value: '@(Math.Round(total / 25000, 2))'
+                    }
+                }]
+            });
+        },
+
+        onApprove: function (data, actions) {
+            return actions.order.capture().then(function (details) {
+                const address = document.getElementById("address").value;
+
+                fetch('/Customer/PaypalSuccess', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        orderID: data.orderID,
+                        payerID: data.payerID,
+                        amount: @total,
+                        shippingAddress: address
+                    })
+                })
+                .then(res => res.json())
+                .then(res => {
+                    if (res.success) {
+                        window.location.href = res.redirectUrl;
+                    }
+                });
+            });
+        }
+    }).render('#paypal-button-container');
+</script>

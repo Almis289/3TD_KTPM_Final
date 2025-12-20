@@ -1,0 +1,70 @@
+﻿@model List<Book_Store.Models.Order>
+@using Book_Store.Helpers
+
+@{
+    Layout = "_AdminLayout";
+    var statusOptions = OrderStatusHelper.GetStatusDisplay();
+}
+
+<h2>Quản lý đơn hàng</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Mã đơn</th>
+            <th>Người đặt</th>
+            <th>Ngày đặt</th>
+            <th>Trạng thái</th>
+            <th>Chi tiết</th>
+            <th>Cập nhật trạng thái</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var order in Model)
+        {
+            <tr>
+                <td>@order.OrderId</td>
+                <td>
+                    @if (order.User != null)
+                    {
+                        @order.User.FullName
+                        <div class="text-muted small">@order.User.Email</div>
+                    }
+                    else
+                    {
+                        <span class="text-muted">—</span>
+                    }
+                </td>
+                <td>@order.OrderDate.ToString("dd/MM/yyyy")</td>
+                <td>@statusOptions[order.Status]</td>
+                <td>
+                    <a asp-action="OrderDetails" asp-route-id="@order.OrderId" class="btn btn-sm btn-outline-info">
+                        Xem
+                    </a>
+                </td>
+                <td>
+                    <ul>
+                        @foreach (var detail in order.OrderDetails)
+                        {
+                            <li>@detail.Product?.ProductName x @detail.Quantity</li>
+                        }
+                    </ul>
+                </td>
+                <td>
+                    <form asp-action="UpdateOrderStatus" method="post">
+                        <input type="hidden" name="id" value="@order.OrderId" />
+                        <select name="status" class="form-select form-select-sm d-inline w-auto">
+                            @foreach (var status in statusOptions)
+                            {
+                                <option value="@status.Key" selected="@(order.Status == status.Key)">
+                                    @status.Value
+                                </option>
+                            }
+                        </select>
+                        <button type="submit" class="btn btn-primary btn-sm">Cập nhật</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

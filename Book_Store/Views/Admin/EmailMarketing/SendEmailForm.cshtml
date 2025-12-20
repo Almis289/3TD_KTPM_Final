@@ -1,0 +1,300 @@
+﻿@model Book_Store.ViewModels.EmailMarketingViewModel
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Email Marketing";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <!-- Form gửi email -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4>Gửi Email Marketing</h4>
+                </div>
+                <div class="card-body">
+                    @if (TempData["Message"] != null)
+                    {
+                        <div class="alert alert-success">@TempData["Message"]</div>
+                    }
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger">@TempData["Error"]</div>
+                    }
+
+                    <form asp-action="SendEmailForm" method="post">
+                        <div class="mb-3">
+                            <label>Tiêu đề email</label>
+                            <input asp-for="Subject" class="form-control" id="emailTitle" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Nội dung</label>
+                            <textarea asp-for="Content" class="form-control" rows="5" id="emailContent" required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <input type="text" id="searchProductBox"
+                                   class="form-control"
+                                   placeholder="Tìm sản phẩm theo tên hoặc mã...">
+                        </div>
+
+                        <div class="product-list" id="productList">
+                            @foreach (var p in Model.Products)
+                            {
+                                <label class="select-item">
+                                    <input type="checkbox"
+                                           name="SelectedProductIds"
+                                           value="@p.ProductId"
+                                           data-id="@p.ProductId"
+                                           data-name="@p.ProductName" />
+                                    <span>[@p.ProductId] @p.ProductName – @p.Price.ToString("N0")₫</span>
+                                </label>
+                            }
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Nhập email ngoài danh sách</label>
+                            <input type="text"
+                                   class="form-control"
+                                   name="ManualEmails"
+                                   placeholder="vd: test@gmail.com, abc@yahoo.com" />
+                            <small class="text-muted">
+                                Có thể nhập nhiều email, phân cách bằng dấu phẩy (,)
+                            </small>
+                        </div>
+
+
+                        <div class="mb-3">
+                            <input type="text" id="searchEmailBox" class="form-control" placeholder="Tìm email...">
+                        </div>
+
+                        <div class="email-list" id="emailList">
+                            <label>Danh sách email (khách hàng + subscriber)</label>
+
+                           
+
+
+                            @foreach (var e in Model.AllEmails)
+                            {
+                                <label class="select-item">
+                                    <input type="checkbox"
+                                           name="SelectedAllEmails"
+                                           value="@e.Email" />
+                                    <span>
+                                        @e.Email
+                                        @if (e.Type == "Customer")
+                                        {
+                                            <small>(@e.Name)</small>
+                                        }
+                                        else
+                                        {
+                                            <small>(Subscriber)</small>
+                                        }
+                                    </span>
+                                </label>
+                            }
+
+                            
+                        </div>
+
+
+                        <div class="mb-3">
+                            <button type="button" id="selectAllCustomersAndSubscribers" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-check-all"></i> Chọn tất cả khách hàng + subscriber
+                            </button>
+
+                            <small class="text-muted d-block">
+                                Sẽ chọn toàn bộ email khách hàng đã đăng ký tài khoản và tất cả email subscriber.
+                            </small>
+                        </div>
+
+
+                        <button type="submit" class="btn btn-success">Gửi email</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live preview email -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h4>Preview Email</h4>
+                </div>
+                <div class="card-body" style="background:#f4f4f4;">
+                    <div id="previewContainer" style="padding:20px; background:white; border-radius:10px;">
+                        <h2 id="previewTitle" style="color:#333;">[Tiêu đề email]</h2>
+                        <p id="previewContent" style="font-size:16px; line-height:1.6;">[Nội dung email]</p>
+                        <div id="previewProduct" style="margin-top:20px; text-align:center; display:none;">
+                            <h3 id="previewProductName"></h3>
+                            <p id="previewProductPrice"></p>
+                            <p id="previewProductDesc"></p>
+                            <img id="previewProductImg" src="" style="max-width:250px; border-radius:10px;" />
+                        </div>
+                        <hr />
+                        <p style="font-size:14px; color:gray;">Cảm ơn bạn đã theo dõi Book Store!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const emailTitle = document.getElementById('emailTitle');
+        const emailContent = document.getElementById('emailContent');
+        const productSelect = document.getElementById('productSelect');
+
+        const previewTitle = document.getElementById('previewTitle');
+        const previewContent = document.getElementById('previewContent');
+        const previewProduct = document.getElementById('previewProduct');
+        const previewProductName = document.getElementById('previewProductName');
+        const previewProductPrice = document.getElementById('previewProductPrice');
+        const previewProductDesc = document.getElementById('previewProductDesc');
+        const previewProductImg = document.getElementById('previewProductImg');
+
+        // Cập nhật tiêu đề và nội dung
+        emailTitle.addEventListener('input', () => {
+            previewTitle.textContent = emailTitle.value || "[Tiêu đề email]";
+        });
+        emailContent.addEventListener('input', () => {
+            previewContent.innerHTML = (emailContent.value || "[Nội dung email]").replace(/\n/g, "<br>");
+        });
+
+
+        // Thanh tìm kiếm sản phẩm
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const searchProductBox = document.getElementById("searchProductBox");
+            const productItems = document.querySelectorAll("#productList .select-item");
+
+            searchProductBox.addEventListener("input", function () {
+                const keyword = this.value.trim().toLowerCase();
+                const isNumber = /^\d+$/.test(keyword);
+
+                productItems.forEach(item => {
+                    const checkbox = item.querySelector("input");
+
+                    const id = checkbox.getAttribute("data-id");
+                    const name = checkbox.getAttribute("data-name").toLowerCase();
+
+                    let match = false;
+
+                    if (keyword === "") {
+                        match = true;
+                    }
+                    else if (isNumber) {
+                        // 🔢 chỉ tìm theo ID
+                        match = id.startsWith(keyword);
+                    }
+                    else {
+                        // 🔤 tìm theo TÊN
+                        match = name.includes(keyword);
+                    }
+
+                    item.style.display = match ? "flex" : "none";
+                });
+            });
+
+            // 🚫 Chặn Enter submit form
+            searchProductBox.addEventListener("keydown", function (e) {
+                if (e.key === "Enter") e.preventDefault();
+            });
+
+        });
+
+        // Thanh tìm kiếm Email
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const searchEmailBox = document.getElementById("searchEmailBox");
+            const emailItems = document.querySelectorAll("#emailList .select-item");
+
+            if (!searchEmailBox) return;
+
+            // 🔍 realtime filter email
+            searchEmailBox.addEventListener("input", function () {
+                const keyword = this.value.trim().toLowerCase();
+
+                emailItems.forEach(item => {
+                    const text = item.innerText.toLowerCase();
+
+                    if (keyword === "" || text.includes(keyword)) {
+                        item.style.display = "flex";
+                    } else {
+                        item.style.display = "none";
+                    }
+                });
+            });
+
+            // 🚫 chặn Enter submit form
+            searchEmailBox.addEventListener("keydown", function (e) {
+                if (e.key === "Enter") e.preventDefault();
+            });
+
+        });
+
+    
+
+        // === Nút chọn tất cả khách hàng + subscriber ===
+                document.addEventListener("DOMContentLoaded", function () {
+
+            const selectAllBtn = document.getElementById("selectAllCustomersAndSubscribers");
+            const emailItems = document.querySelectorAll("#emailList input[type='checkbox']");
+
+            if (!selectAllBtn) return;
+
+            selectAllBtn.addEventListener("click", function () {
+
+                let hasUnchecked = false;
+
+                // kiểm tra còn email nào chưa được chọn không
+                emailItems.forEach(cb => {
+                    if (!cb.checked && cb.offsetParent !== null) {
+                        hasUnchecked = true;
+                    }
+                });
+
+                // nếu còn checkbox chưa chọn → chọn tất cả
+                // nếu đã chọn hết → bỏ chọn tất cả
+                emailItems.forEach(cb => {
+                    if (cb.offsetParent !== null) {
+                        cb.checked = hasUnchecked;
+                    }
+                });
+            });
+
+        });
+
+
+
+
+        // Cập nhật preview sản phẩm
+        productSelect.addEventListener('change', () => {
+            const selectedOption = productSelect.options[productSelect.selectedIndex];
+            const imageUrl = selectedOption.getAttribute('data-image');
+            const name = selectedOption.getAttribute('data-name');
+            const price = selectedOption.getAttribute('data-price');
+            const desc = selectedOption.getAttribute('data-description');
+            document.querySelector('[asp-for="SelectedProductIds"]').addEventListener('change', function() {
+                const count = this.selectedOptions.length;
+                document.getElementById('selectedCount').textContent = `Đã chọn: ${count} sản phẩm${count > 6 ? ' (sẽ chỉ lấy 6 đầu)' : ''}`;
+        });
+
+            if (imageUrl) {
+                previewProductName.textContent = name;
+                previewProductPrice.textContent = `Giá: ${parseFloat(price).toLocaleString()}₫`;
+                previewProductDesc.textContent = desc || "";
+                previewProductImg.src = imageUrl;
+                previewProduct.style.display = 'block';
+            } else {
+                previewProduct.style.display = 'none';
+            }
+        });
+
+        
+
+
+    </script>
+}
