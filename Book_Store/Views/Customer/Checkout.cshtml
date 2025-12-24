@@ -45,7 +45,7 @@ else
         </tfoot>
     </table>
 
-    @using (Html.BeginForm("Checkout", "Customer", FormMethod.Post, new { id = "checkoutForm" }))
+    @using (Html.BeginForm("Checkout", "Customer",  FormMethod.Post, new { id = "checkoutForm" }))
     {
         @Html.AntiForgeryToken()
 
@@ -71,6 +71,12 @@ else
                 <input class="form-check-input" id="paypalOption" type="radio" name="paymentMethod" value="PayPal">
                 <label class="form-check-label">Thanh toán bằng PayPal</label>
             </div>
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="radio" name="paymentMethod" value="VNPAY" id="vnpayOption">
+                <label class="form-check-label">Thanh toán qua VNPAY</label>
+            </div>
+            
+            
         </div>
 
         <div id="paypal-section" style="display:none;">
@@ -79,9 +85,33 @@ else
             <div id="paypal-button-container"></div>
         </div>
 
-        <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-success">✅ Xác nhận đặt hàng</button>
-            <a asp-action="Cart" class="btn btn-secondary">🔙 Quay lại giỏ hàng</a>
+        <!-- VNPAY Section -->
+        <div id="vnpay-section" class="border rounded p-4 mb-4 text-center bg-light" style="display: none;">
+            <h4 class="text-danger mb-3">Bạn đã chọn thanh toán qua VNPAY</h4>
+            <p class="text-muted mb-4">Nhấn nút dưới đây để chuyển đến cổng thanh toán an toàn của VNPAY</p>
+
+            <!-- KHÔNG dùng <form> nữa, chỉ để hidden fields và button -->
+            <input type="hidden" name="Amount" value="@total" />
+            <input type="hidden" name="OrderDescription" value="Thanh toan don hang tai Book Store" />
+            <input type="hidden" name="Name" value="Khách hàng" />
+            <input type="hidden" name="address" id="vnpayAddressHidden" />
+
+            <button type="button" id="vnpaySubmitBtn" class="btn btn-danger btn-lg px-5 shadow">
+                Thanh toán VNPAY ngay
+            </button>
+        </div>
+
+
+
+
+        <!-- Nút submit chính của form checkout (cho COD, Chuyển khoản, PayPal) -->
+        <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-success" id="confirmOrderBtn">
+                ✅ Xác nhận đặt hàng
+            </button>
+            <a asp-action="Cart" asp-controller="Customer" class="btn btn-secondary">
+                🔙 Quay lại giỏ hàng
+            </a>
         </div>
     }
 }
@@ -89,37 +119,75 @@ else
 <script src="https://www.paypal.com/sdk/js?client-id=AVjgnYgepESvSrzK0yWQNNvCzjfPBfycUGrtn07O5HzhxJM3S96-oF9-bJK3UuudZ9GbWb5M1vufLJPD&currency=USD"></script>
 
 <script>
-    // Hiện ẩn PayPal Section
+    // =============== PayPal Section ===============
     const paypalOption = document.getElementById('paypalOption');
     const paypalSection = document.getElementById('paypal-section');
 
+    // =============== VNPAY Section ===============
+    const vnpayOption = document.getElementById('vnpayOption');
+    const vnpaySection = document.getElementById('vnpay-section');
+    const addressInput = document.getElementById('address');
+    const vnpayAddressHidden = document.getElementById('vnpayAddressHidden');
+
+    function updatePaymentSections() {
+        // PayPal
+        paypalSection.style.display = paypalOption.checked ? 'block' : 'none';
+
+        // VNPAY
+        if (vnpayOption.checked) {
+            vnpaySection.style.display = 'block';
+            // Copy địa chỉ hiện tại vào hidden field
+            if (addressInput && vnpayAddressHidden) {
+                vnpayAddressHidden.value = addressInput.value;
+            }
+        } else {
+            vnpaySection.style.display = 'none';
+        }
+
+        // Ẩn/hiện nút xác nhận chính (không submit nếu chọn VNPAY hoặc PayPal)
+        const confirmBtn = document.getElementById('confirmOrderBtn');
+        if (vnpayOption.checked || paypalOption.checked) {
+            confirmBtn.style.display = 'none';
+        } else {
+            confirmBtn.style.display = 'block';
+        }
+    }
+
+    // Lắng nghe thay đổi radio
     document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
-        radio.addEventListener('change', () => {
-            paypalSection.style.display = paypalOption.checked ? "block" : "none";
-        });
+        radio.addEventListener('change', updatePaymentSections);
     });
 
-    // PayPal Button
+    // Cập nhật địa chỉ realtime khi người dùng gõ (nếu đang chọn VNPAY)
+    if (addressInput) {
+        addressInput.addEventListener('input', () => {
+            if (vnpayOption.checked && vnpayAddressHidden) {
+                vnpayAddressHidden.value = addressInput.value;
+            }
+        });
+    }
+
+    // Khởi tạo trạng thái ban đầu
+    updatePaymentSections();
+
+    // =============== PayPal Buttons ===============
     paypal.Buttons({
         createOrder: function (data, actions) {
             return actions.order.create({
                 purchase_units: [{
                     amount: {
-                        value: '@(Math.Round(total / 25000, 2))'
+                        value: '@(Math.Round(total / 25000, 2))' // VND -> USD (tỷ giá ~25,000)
                     }
                 }]
             });
         },
-
         onApprove: function (data, actions) {
             return actions.order.capture().then(function (details) {
                 const address = document.getElementById("address").value;
 
-                fetch('/Customer/PaypalSuccess', {
+                fetch('/Customer/PaypalSuccess', {  // cần có action này nếu dùng PayPal thật
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         orderID: data.orderID,
                         payerID: data.payerID,
@@ -131,9 +199,37 @@ else
                 .then(res => {
                     if (res.success) {
                         window.location.href = res.redirectUrl;
+                    } else {
+                        alert('Thanh toán PayPal thất bại!');
                     }
                 });
             });
         }
     }).render('#paypal-button-container');
+
+    // Thêm xử lý riêng cho nút VNPAY
+    document.getElementById('vnpaySubmitBtn').addEventListener('click', function () {
+        // Copy địa chỉ vào hidden field (nếu chưa có)
+        document.getElementById('vnpayAddressHidden').value = document.getElementById('address').value;
+
+        // Kiểm tra địa chỉ bắt buộc
+        if (!document.getElementById('address').value.trim()) {
+            alert('Vui lòng nhập địa chỉ giao hàng!');
+            return;
+        }
+
+        // Override action của form chính chỉ cho VNPAY
+        const mainForm = document.getElementById('checkoutForm');
+        mainForm.action = '@Url.Action("CreatePaymentVnpay", "Customer")';
+        mainForm.method = 'POST';
+
+        // Submit form chính
+        mainForm.submit();
+    });
+
+    // Khởi tạo trạng thái ban đầu
+    updatePaymentSections();
 </script>
+
+
+

@@ -84,6 +84,14 @@
                     </p>
                     <p class="mb-0"><strong>Số tiền:</strong> @p.Amount.ToString("N0") ₫</p>
                     <p class="mb-0"><strong>Ngày:</strong> @p.PaymentDate.ToString("dd/MM/yyyy HH:mm")</p>
+                    <!-- 👈👈 THÊM HIỂN THỊ MÃ GD 👈👈 -->
+                    @if (!string.IsNullOrWhiteSpace(p.TransactionId))
+                    {
+                        <p class="mb-0 text-success">
+                            <strong>Mã giao dịch VNPAY:</strong>
+                            <span class="font-monospace">@p.TransactionId</span>
+                        </p>
+                    }
                 </div>
             }
         }

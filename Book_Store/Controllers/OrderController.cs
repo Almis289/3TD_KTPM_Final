@@ -1,5 +1,6 @@
 ﻿using Book_Store.Data; // namespace chứa ApplicationDbContext
 using Book_Store.Models; // namespace chứa Order, OrderDetail, Product
+using Book_Store.Services;
 using Book_Store.Services.Vnpay;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

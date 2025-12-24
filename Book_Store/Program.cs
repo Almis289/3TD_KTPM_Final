@@ -12,7 +12,8 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 
-
+// Add services to the container.
+builder.Services.AddControllersWithViews();
 
 // Cấu hình Email
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
@@ -24,8 +25,8 @@ builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 builder.Services.AddSignalR();
 
-//Connect VNPay API
-builder.Services.AddScoped<IVnPayService, VnPayService>();
+
+
 
 // ✅ Thêm dịch vụ MVC
 builder.Services.AddControllersWithViews();
@@ -46,6 +47,21 @@ builder.Services.AddAuthorization();
 // ✅ Cấu hình DbContext
 builder.Services.AddDbContext<BookStoreDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Đăng ký Session (nếu dùng)
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
+//Connect VNPay API
+builder.Services.AddScoped<IVnPayService, VnPayService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSession();
+
 
 var app = builder.Build();
 

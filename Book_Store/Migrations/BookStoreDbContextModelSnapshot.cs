@@ -43,7 +43,7 @@ namespace Book_Store.Migrations
 
                     b.HasKey("AuthorId");
 
-                    b.ToTable("Authors");
+                    b.ToTable("Authors", (string)null);
                 });
 
             modelBuilder.Entity("Book_Store.Models.CartItem", b =>
@@ -69,7 +69,7 @@ namespace Book_Store.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("CartItems");
+                    b.ToTable("CartItems", (string)null);
                 });
 
             modelBuilder.Entity("Book_Store.Models.Category", b =>
@@ -91,7 +91,7 @@ namespace Book_Store.Migrations
 
                     b.HasKey("CategoryId");
 
-                    b.ToTable("Categories");
+                    b.ToTable("Categories", (string)null);
                 });
 
             modelBuilder.Entity("Book_Store.Models.ChatMessage", b =>
@@ -120,7 +120,7 @@ namespace Book_Store.Migrations
 
                     b.HasIndex("ChatSessionId");
 
-                    b.ToTable("ChatMessages");
+                    b.ToTable("ChatMessages", (string)null);
                 });
 
             modelBuilder.Entity("Book_Store.Models.ChatSession", b =>
@@ -143,7 +143,7 @@ namespace Book_Store.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ChatSessions");
+                    b.ToTable("ChatSessions", (string)null);
                 });
 
             modelBuilder.Entity("Book_Store.Models.Order", b =>
@@ -176,7 +176,7 @@ namespace Book_Store.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Orders");
+                    b.ToTable("Orders", (string)null);
                 });
 
             modelBuilder.Entity("Book_Store.Models.OrderDetail", b =>
@@ -206,7 +206,7 @@ namespace Book_Store.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("OrderDetails");
+                    b.ToTable("OrderDetails", (string)null);
                 });
 
             modelBuilder.Entity("Book_Store.Models.Payment", b =>
@@ -241,7 +241,7 @@ namespace Book_Store.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Payments");
+                    b.ToTable("Payments", (string)null);
                 });
 
             modelBuilder.Entity("Book_Store.Models.PaymentHistory", b =>
@@ -270,7 +270,7 @@ namespace Book_Store.Migrations
 
                     b.HasIndex("PaymentId");
 
-                    b.ToTable("PaymentHistories");
+                    b.ToTable("PaymentHistories", (string)null);
                 });
 
             modelBuilder.Entity("Book_Store.Models.Product", b =>
@@ -314,7 +314,7 @@ namespace Book_Store.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("Products");
+                    b.ToTable("Products", (string)null);
                 });
 
             modelBuilder.Entity("Book_Store.Models.ProductDetail", b =>
@@ -348,7 +348,7 @@ namespace Book_Store.Migrations
                     b.HasIndex("ProductId")
                         .IsUnique();
 
-                    b.ToTable("ProductDetails");
+                    b.ToTable("ProductDetails", (string)null);
                 });
 
             modelBuilder.Entity("Book_Store.Models.Subscriber", b =>
@@ -368,7 +368,7 @@ namespace Book_Store.Migrations
 
                     b.HasKey("SubscriberId");
 
-                    b.ToTable("Subscribers");
+                    b.ToTable("Subscribers", (string)null);
                 });
 
             modelBuilder.Entity("Book_Store.Models.User", b =>
@@ -420,7 +420,7 @@ namespace Book_Store.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("Book_Store.Models.CartItem", b =>

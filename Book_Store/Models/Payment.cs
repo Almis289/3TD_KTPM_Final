@@ -31,5 +31,6 @@ namespace Book_Store.Models
         public string? PaypalPayerId { get; set; }
 
         public ICollection<PaymentHistory> PaymentHistories { get; set; } = new List<PaymentHistory>();
+        public string TransactionId { get; set; }  // Mã giao dịch VNPAY (ví dụ: 15364604)
     }
 }
