@@ -1,29 +1,72 @@
 ﻿@model Book_Store.Models.Product
+@using System.Text.Json
+@using Microsoft.AspNetCore.Http
 
 @{
     ViewBag.Title = "Chi tiết sách";
 
-    string productName = string.IsNullOrWhiteSpace(Model?.ProductName)
-        ? "Không rõ tên sách"
-        : Model.ProductName;
-
-    string authorName = string.IsNullOrWhiteSpace(Model?.Author?.AuthorName)
-        ? "Không rõ tác giả"
-        : Model.Author.AuthorName;
-
-    string categoryName = string.IsNullOrWhiteSpace(Model?.Category?.CategoryName)
-        ? "Không rõ thể loại"
-        : Model.Category.CategoryName;
-
-    string description = string.IsNullOrWhiteSpace(Model?.ProductDetail?.Description)
-        ? "Chưa có mô tả"
-        : Model.ProductDetail.Description;
+    string productName = Model?.ProductName ?? "Không rõ tên sách";
+    string authorName = Model?.Author?.AuthorName ?? "Không rõ tác giả";
+    string categoryName = Model?.Category?.CategoryName ?? "Không rõ thể loại";
+    string description = Model?.ProductDetail?.Description ?? "Chưa có mô tả";
 
     string imageUrl = string.IsNullOrWhiteSpace(Model?.ImageUrl)
-        ? "/images/default-book.png"
-        : Model.ImageUrl;
+        ? Url.Content("~/images/default-book.png")
+        : Url.Content(Model.ImageUrl);
 
-    string priceText = $"{(Model?.Price ?? 0):N0} đ"; // ✅ Format giá gọn gàng
+    string priceText = $"{(Model?.Price ?? 0):N0} đ";
+
+    // Tạo URL trang hiện tại
+    string currentUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/Customer/ProductDetail/{Model?.ProductId}";
+
+    // JSON-LD Schema (không còn lỗi)
+    var jsonLd = new Dictionary<string, object?>
+    {
+        ["@context"] = "https://schema.org/",
+        ["@type"] = "Book",
+        ["name"] = productName,
+        ["author"] = authorName,
+        ["image"] = imageUrl,
+        ["description"] = description,
+        ["offers"] = new Dictionary<string, object?>
+        {
+            ["@type"] = "Offer",
+            ["price"] = Model?.Price ?? 0,
+            ["priceCurrency"] = "VND",
+            ["availability"] = "https://schema.org/InStock"
+        }
+    };
+
+    string jsonLdText = JsonSerializer.Serialize(jsonLd, new JsonSerializerOptions
+    {
+        WriteIndented = true
+    });
+}
+
+@section SeoMeta {
+    <title>@productName | 3TD Book Store</title>
+
+    <meta name="description" content="@description" />
+    <meta name="keywords" content="@productName, @authorName, @categoryName, sách hay" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="@productName" />
+    <meta property="og:description" content="@description" />
+    <meta property="og:image" content="@imageUrl" />
+    <meta property="og:url" content="@currentUrl" />
+    <meta property="og:type" content="product" />
+    <meta property="og:site_name" content="3TD Book Store" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="@productName" />
+    <meta name="twitter:description" content="@description" />
+    <meta name="twitter:image" content="@imageUrl" />
+
+    <!-- JSON-LD Schema.org -->
+    <script type="application/ld+json">
+        @Html.Raw(jsonLdText)
+    </script>
 }
 
 <div class="container mt-4">
@@ -36,8 +79,9 @@
 
     <div class="row">
         <div class="col-md-4">
-            <img src="@imageUrl" alt="@productName" class="img-fluid rounded shadow-sm"
-                 onerror="this.onerror=null;this.src='/images/default-book.png';" />
+            <img src="@imageUrl"
+                 alt="@productName"
+                 class="img-fluid rounded shadow-sm" />
         </div>
 
         <div class="col-md-8">
@@ -48,24 +92,37 @@
                 <li class="list-group-item"><strong>Mô tả:</strong> @description</li>
             </ul>
 
-            @if (User != null && User.Identity != null && User.Identity.IsAuthenticated)
+            @if (User.Identity?.IsAuthenticated ?? false)
             {
-                @* Dùng tag helper (đơn giản, rõ ràng) *@
                 <form asp-controller="Customer" asp-action="AddToCart" method="post" class="mt-4">
                     @Html.AntiForgeryToken()
-                    <input type="hidden" name="productId" value="@(Model?.ProductId ?? 0)" />
-                    <div class="form-group mb-2">
-                        <label for="quantity" class="form-label"><strong>Số lượng:</strong></label>
-                        <input type="number" name="quantity" id="quantity" value="1" min="1" class="form-control w-25" />
-                    </div>
-                    <button type="submit" class="btn btn-success mt-2">
+
+                    <input type="hidden" name="productId" value="@Model.ProductId" />
+
+                    <label class="form-label mt-2"><strong>Số lượng:</strong></label>
+                    <input type="number" name="quantity" value="1" min="1"
+                           class="form-control w-25" />
+
+                    <button type="submit" class="btn btn-success mt-3">
                         <i class="bi bi-cart-plus"></i> Thêm vào giỏ hàng
                     </button>
+
+                    <div class="mt-4">
+                        <a href="https://www.facebook.com/sharer/sharer.php?u=@currentUrl"
+                           target="_blank" class="btn btn-primary me-2">
+                            <i class="bi bi-facebook"></i> Chia sẻ Facebook
+                        </a>
+
+                        <a href="https://zalo.me/share?url=@currentUrl"
+                           target="_blank" class="btn btn-info">
+                            <i class="bi bi-chat-dots"></i> Chia sẻ Zalo
+                        </a>
+                    </div>
                 </form>
             }
             else
             {
-                <a href="@Url.Action("Login", "Account", new { returnUrl = Url.Action("ProductDetail", "Customer", new { id = (Model != null ? Model.ProductId : 0) }) })"
+                <a href="@Url.Action("Login", "Account", new { returnUrl = currentUrl })"
                    class="btn btn-warning mt-4">
                     <i class="bi bi-box-arrow-in-right"></i> Đăng nhập để mua hàng
                 </a>

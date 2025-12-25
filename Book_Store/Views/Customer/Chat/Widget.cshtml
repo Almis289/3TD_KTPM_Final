@@ -1,0 +1,83 @@
+﻿@model Book_Store.Models.ChatSession
+@{
+    Layout = null;
+}
+
+<link rel="stylesheet" href="/css/chat.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
+<div class="chat-widget">
+
+    <!-- HEADER -->
+    <div class="chat-header">
+        <div class="chat-title">
+            <div class="status-dot"></div>
+            Hỗ trợ trực tuyến
+        </div>
+    </div>
+
+    <!-- MESSAGES -->
+    <div class="chat-box" id="chatMessages">
+        @foreach (var msg in Model.Messages)
+        {
+            <div class="chat-row @(msg.Sender == "User" ? "user" : "manager")">
+                <div class="chat-bubble">
+                    @msg.Content
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- INPUT -->
+    <div class="chat-input">
+        <input type="text" id="messageInput" placeholder="Nhập tin nhắn..." />
+        <button id="sendBtn">➤</button>
+    </div>
+
+</div>
+
+<script>
+    let sessionId = @Model.Id;
+    const sender = "User";
+
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/chatHub")
+        .build();
+
+    connection.start().then(() => {
+        connection.invoke("JoinSession", sessionId);
+    });
+
+    connection.on("ReceiveMessage", (senderName, message) => {
+        const box = document.getElementById("chatMessages");
+        const rowClass = senderName === "User" ? "user" : "manager";
+
+        box.innerHTML += `
+            <div class="chat-row ${rowClass}">
+                <div class="chat-bubble">${message}</div>
+            </div>`;
+        box.scrollTop = box.scrollHeight;
+    });
+
+    document.getElementById("sendBtn").onclick = send;
+    document.getElementById("messageInput").addEventListener("keypress", e => {
+        if (e.key === "Enter") send();
+    });
+
+    function send() {
+        const input = document.getElementById("messageInput");
+        if (!input.value.trim()) return;
+
+        fetch("/Chat/SendMessage", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                sessionId,
+                sender,
+                content: input.value
+            })
+        });
+
+        input.value = "";
+    }
+</script>

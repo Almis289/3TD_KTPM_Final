@@ -4,6 +4,7 @@
     ViewBag.Title = "Trang chủ";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
+<link rel="stylesheet" href="~/css/livechat.css" />
 
 <div class="text-center py-5">
     <h1 class="display-3 fw-bold">📚 3TD_BOOKS</h1>
@@ -69,7 +70,23 @@
     <h5 class="mb-2">🎁 Các khuyến mãi dành tặng</h5>
     <p class="mb-0">Miễn phí vận chuyển cho đơn hàng từ <strong>300.000đ</strong>.</p>
     <p class="mb-0"> Đăng nhập/Đăng ký tài khoản để đồng hành cùng chúng tôi</p>
+    
 </div>
+<form asp-controller="Subscribe"
+      asp-action="Register"
+      method="post"
+      class="d-flex gap-2">
+
+    <input type="email"
+           name="email"
+           class="form-control"
+           placeholder="Nhập email nhận khuyến mãi"
+           required />
+
+    <button class="btn btn-primary">
+        Đăng ký
+    </button>
+</form>
 
 <!-- Footer -->
 <footer class="bg-dark text-white text-center py-4 mt-5">
@@ -89,3 +106,42 @@
     </div>
 
 </footer>
+
+
+<div id="liveChatBtn">
+    💬
+</div>
+
+<div id="liveChatBox" class="hidden">
+    <div class="livechat-header">
+        <span>Hỗ trợ trực tuyến</span>
+        <button id="closeChat">✕</button>
+    </div>
+
+    <iframe src="/Chat/Widget"></iframe>
+
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const chatBtn = document.getElementById("liveChatBtn");
+        const chatBox = document.getElementById("liveChatBox");
+        const closeBtn = document.getElementById("closeChat");
+
+        if (!chatBtn || !chatBox || !closeBtn) {
+            console.error("LiveChat DOM not found");
+            return;
+        }
+
+        chatBtn.addEventListener("click", () => {
+            chatBox.classList.toggle("hidden");
+        });
+
+        closeBtn.addEventListener("click", () => {
+            chatBox.classList.add("hidden");
+        });
+    });
+</script>
+
+

@@ -71,6 +71,11 @@ else
                 <input class="form-check-input" id="paypalOption" type="radio" name="paymentMethod" value="PayPal">
                 <label class="form-check-label">Thanh toán bằng PayPal</label>
             </div>
+            <div class="form-check">
+                <input class="form-check-input" id="vnpayOption" type="radio" name="paymentMethod" value="VNPAY">
+                <label class="form-check-label">Thanh toán qua VNPAY</label>
+            </div>
+
         </div>
 
         <div id="paypal-section" style="display:none;">
@@ -78,9 +83,10 @@ else
             <h4>Thanh toán qua PayPal</h4>
             <div id="paypal-button-container"></div>
         </div>
+       
 
         <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-success">✅ Xác nhận đặt hàng</button>
+            <button type="submit" id="btnSubmit" class="btn btn-success">✅ Xác nhận đặt hàng</button>
             <a asp-action="Cart" class="btn btn-secondary">🔙 Quay lại giỏ hàng</a>
         </div>
     }
@@ -89,19 +95,35 @@ else
 <script src="https://www.paypal.com/sdk/js?client-id=AVjgnYgepESvSrzK0yWQNNvCzjfPBfycUGrtn07O5HzhxJM3S96-oF9-bJK3UuudZ9GbWb5M1vufLJPD&currency=USD"></script>
 
 <script>
-    // Hiện ẩn PayPal Section
-    const paypalOption = document.getElementById('paypalOption');
-    const paypalSection = document.getElementById('paypal-section');
+    const form = document.getElementById("checkoutForm");
+    const btnSubmit = document.getElementById("btnSubmit");
+    const paypalOption = document.getElementById("paypalOption");
+    const vnpayOption = document.getElementById("vnpayOption");
+    const paypalSection = document.getElementById("paypal-section");
 
-    document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
-        radio.addEventListener('change', () => {
+    // Hiện / ẩn PayPal
+    document.querySelectorAll("input[name='paymentMethod']").forEach(radio => {
+        radio.addEventListener("change", () => {
             paypalSection.style.display = paypalOption.checked ? "block" : "none";
+            btnSubmit.style.display = (paypalOption.checked) ? "none" : "inline-block";
         });
+    });
+
+    // XỬ LÝ SUBMIT
+    form.addEventListener("submit", function (e) {
+        if (vnpayOption.checked) {
+            e.preventDefault();
+            form.action = "/Customer/VnpayCreate";
+            form.submit();
+        }
+        else {
+            form.action = "/Customer/Checkout";
+        }
     });
 
     // PayPal Button
     paypal.Buttons({
-        createOrder: function (data, actions) {
+        createOrder: (data, actions) => {
             return actions.order.create({
                 purchase_units: [{
                     amount: {
@@ -110,30 +132,25 @@ else
                 }]
             });
         },
-
-        onApprove: function (data, actions) {
-            return actions.order.capture().then(function (details) {
-                const address = document.getElementById("address").value;
-
+        onApprove: (data, actions) => {
+            return actions.order.capture().then(details => {
                 fetch('/Customer/PaypalSuccess', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         orderID: data.orderID,
                         payerID: data.payerID,
                         amount: @total,
-                        shippingAddress: address
+                        shippingAddress: document.getElementById("address").value
                     })
                 })
-                .then(res => res.json())
-                .then(res => {
-                    if (res.success) {
-                        window.location.href = res.redirectUrl;
-                    }
+                .then(r => r.json())
+                .then(r => {
+                    if (r.success)
+                        window.location.href = r.redirectUrl;
                 });
             });
         }
     }).render('#paypal-button-container');
 </script>
+

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Book_Store.Controllers
 {
@@ -27,8 +28,18 @@ namespace Book_Store.Controllers
         {
             var model = new EmailMarketingViewModel
             {
-                Products = await _context.Products.Include(p => p.ProductDetail).ToListAsync(),
-                Users = await _context.Users.Where(u => u.Role == "Customer").ToListAsync()
+                Products = await _context.Products
+            .Include(p => p.ProductDetail)
+            .ToListAsync(),
+
+                Users = await _context.Users
+            .Where(u => u.Role == "Customer")
+            .ToListAsync(),
+
+                // 👇 THÊM DÒNG NÀY
+                SubscribeEmails = await _context.SubscribeEmails
+            .Select(x => x.Email)
+            .ToListAsync()
             };
 
             return View("~/Views/Admin/EmailMarketing/SendEmailForm.cshtml", model);
@@ -37,49 +48,67 @@ namespace Book_Store.Controllers
         [HttpPost]
         public async Task<IActionResult> SendEmailForm(EmailMarketingViewModel model)
         {
-            // Danh sách email người nhận
-            var emails = model.SelectedEmails.Any()
-                ? model.SelectedEmails
-                : await _context.Users
-                    .Where(u => !string.IsNullOrEmpty(u.Email))
-                    .Select(u => u.Email)
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Dữ liệu không hợp lệ!";
+
+                model.Products = await _context.Products
+                    .Include(p => p.ProductDetail)
                     .ToListAsync();
 
-            Product? product = null;
-            string? productImagePath = null;
+                model.Users = await _context.Users
+                    .Where(u => u.Role == "Customer")
+                    .ToListAsync();
 
-            if (model.ProductId.HasValue)
-            {
-                product = await _context.Products
-                    .Include(p => p.ProductDetail)
-                    .FirstOrDefaultAsync(p => p.ProductId == model.ProductId.Value);
+                model.SubscribeEmails = await _context.SubscribeEmails
+                    .Select(x => x.Email)
+                    .ToListAsync();
 
-                if (product != null && !string.IsNullOrEmpty(product.ImageUrl))
-                {
-                    productImagePath = System.IO.Path.Combine(
-                        System.IO.Directory.GetCurrentDirectory(),
-                        "wwwroot",
-                        product.ImageUrl.TrimStart('/'));
-
-                    if (!System.IO.File.Exists(productImagePath))
-                    {
-                        productImagePath = null;
-                    }
-                }
+                return View("~/Views/Admin/EmailMarketing/SendEmailForm.cshtml", model);
             }
 
-            // Tạo template email
+            // Lấy toàn bộ email
+            List<string> emails = new();
+
+            if (model.SelectedEmails?.Any() ?? false)
+                emails.AddRange(model.SelectedEmails);
+
+            if (!string.IsNullOrWhiteSpace(model.ExtraEmails))
+            {
+                var manual = model.ExtraEmails.Split(',')
+                    .Select(e => e.Trim())
+                    .Where(e => e.Contains("@"));
+                emails.AddRange(manual);
+            }
+
+            var subscribers = await _context.SubscribeEmails.Select(s => s.Email).ToListAsync();
+            
+
+            emails = emails.Distinct().ToList();
+
+            // Lấy danh sách sản phẩm được chọn
+            var products = new List<Product>();
+
+            if (model.SelectedProductIds != null && model.SelectedProductIds.Any())
+            {
+                products = await _context.Products
+                    .Include(p => p.ProductDetail)
+                    .Where(p => model.SelectedProductIds.Contains(p.ProductId))
+                    .ToListAsync();
+            }
+
+            // Build HTML template
             string htmlTemplate = _emailService.BuildProductEmailTemplate(
                 model.Subject,
                 model.Content,
-                product
+                products
             );
 
-            // Gửi email với ảnh inline nếu có
-            await _emailService.SendEmailToAllUsersAsync(emails, model.Subject, htmlTemplate, productImagePath);
+            // Gửi email
+            await _emailService.SendEmailToAllUsersAsync(emails, model.Subject, htmlTemplate, products);
 
             TempData["Message"] = "Gửi email marketing thành công!";
-            return View("~/Views/Admin/EmailMarketing/SendEmailForm.cshtml", model);
+            return RedirectToAction("SendEmailForm");
         }
     }
 }

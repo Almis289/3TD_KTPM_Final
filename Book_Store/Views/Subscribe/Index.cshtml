@@ -1,0 +1,29 @@
+﻿@{
+    ViewData["Title"] = "Đăng ký nhận Email";
+}
+
+<div class="container mt-5" style="max-width: 500px;">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white text-center">
+            <h4>Đăng ký nhận Email Khuyến mãi</h4>
+        </div>
+
+        <div class="card-body">
+            @if (ViewBag.Message != null)
+            {
+                <div class="alert alert-success">@ViewBag.Message</div>
+            }
+            @if (ViewBag.Error != null)
+            {
+                <div class="alert alert-danger">@ViewBag.Error</div>
+            }
+
+            <form method="post">
+                <label>Email:</label>
+                <input type="email" name="email" class="form-control" placeholder="Nhập email..." required />
+
+                <button class="btn btn-success mt-3 w-100">Đăng ký</button>
+            </form>
+        </div>
+    </div>
+</div>

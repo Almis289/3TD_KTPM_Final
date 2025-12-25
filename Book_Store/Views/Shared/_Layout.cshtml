@@ -5,6 +5,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - 3TD_Book_Store</title>
+    <meta name="description" content="@ViewData["Description"] ?? " Mua sách online giá rẻ, giao nhanh tại 3TD Book Store"}">
+    <meta name="keywords" content="@ViewData["Keywords"] ?? " sách, bookstore, mua sách online, truyện, 3TD"}">
+    <meta name="author" content="3TD Book Store" />
+
+    <!-- Cho trang con override -->
+    @RenderSection("SeoMeta", required: false)
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,6 +21,7 @@
 
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Book_Store.styles.css" asp-append-version="true" />
+
     
 </head>
 <body>
@@ -122,6 +129,8 @@
             @RenderBody()
         </main>
     </div>
+    
+
 
     <footer class="border-top footer text-muted">
         <div class="container text-center py-3">
@@ -194,5 +203,6 @@
             }
         });
     });
+
 </script>
 </html>

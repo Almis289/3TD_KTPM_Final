@@ -6,19 +6,20 @@ namespace Book_Store.ViewModels
 {
     public class EmailMarketingViewModel
     {
-        public string Subject { get; set; } = "";
-        public string Content { get; set; } = "";
+        [Required(ErrorMessage = "Vui lòng nhập tiêu đề email")]
+        public string? Subject { get; set; }
 
-        // Sản phẩm được chọn
-        public int? ProductId { get; set; }
+        [Required(ErrorMessage = "Vui lòng nhập nội dung email")]
+        public string? Content { get; set; }
 
-        // Danh sách sản phẩm để chọn
-        public List<Product> Products { get; set; } = new List<Product>();
+        // ===== POST DATA =====
+        public List<int>? SelectedProductIds { get; set; }
+        public List<string>? SelectedEmails { get; set; }
+        public string? ExtraEmails { get; set; }
 
-        // Danh sách người dùng để chọn gửi mail
-        public List<User> Users { get; set; } = new List<User>();
-
-        // Email được chọn
-        public List<string> SelectedEmails { get; set; } = new List<string>();
+        // ===== VIEW ONLY =====
+        public List<string>? SubscribeEmails { get; set; }
+        public List<Product>? Products { get; set; }
+        public List<User>? Users { get; set; }
     }
 }

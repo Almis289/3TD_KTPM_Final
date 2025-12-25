@@ -25,6 +25,8 @@ namespace Book_Store.Data
         public DbSet<ChatSession> ChatSessions { get; set; } = null!;
         public DbSet<ChatMessage> ChatMessages { get; set; } = null!;
 
+        public DbSet<SubscribeEmail> SubscribeEmails { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -1,6 +1,7 @@
 ﻿using Book_Store.Data;
 using Book_Store.Helpers;
 using Book_Store.Models;
+using Book_Store.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,10 +15,14 @@ namespace Book_Store.Controllers
     public class CustomerController : Controller
     {
         private readonly BookStoreDbContext _context;
+        private readonly IConfiguration _config;
+        private readonly IVnPayService _vnPayService;
 
-        public CustomerController(BookStoreDbContext context)
+        public CustomerController(BookStoreDbContext context, IConfiguration config, IVnPayService vnPayService)
         {
             _context = context;
+            _config = config;
+            _vnPayService = vnPayService;
         }
 
         // 🔹 Lấy userId từ Claims
@@ -622,6 +627,122 @@ namespace Book_Store.Controllers
             return Ok(new { success = true, redirectUrl = Url.Action("OrderHistory") });
         }
 
+        [HttpPost]
+        public async Task<IActionResult> VnpayCreate(string address)
+        {
+            var userId = await GetCurrentUserIdAsync();
+            if (userId == null)
+                return RedirectToAction("Login", "Account");
+
+            var selected = HttpContext.Session.GetSelectedProducts();
+
+            var cartItems = await _context.CartItems
+                .Include(c => c.Product)
+                .Where(c => c.UserId == userId && selected.Contains(c.ProductId))
+                .ToListAsync();
+
+            if (!cartItems.Any())
+                return RedirectToAction("Cart");
+
+            decimal totalAmount = cartItems.Sum(c => c.Product.Price * c.Quantity);
+
+            // 🔹 Build Request Model (CHUẨN SERVICE)
+            var requestModel = new VnPaymentRequestModel
+            {
+                OrderId = DateTime.Now.Ticks.ToString(),
+                Amount = totalAmount,
+                CreatedDate = DateTime.Now
+            };
+
+            // Lưu địa chỉ tạm
+            HttpContext.Session.SetString("VNPAY_ADDRESS", address);
+
+            // GỌI SERVICE 
+            string paymentUrl = _vnPayService.CreatePaymentUrl(HttpContext, requestModel);
+
+            return Redirect(paymentUrl);
+        }
+
+
+        [HttpGet]
+        public async Task<IActionResult> VnpayReturn()
+        {
+            // GỌI SERVICE XỬ LÝ CALLBACK
+            var response = _vnPayService.PaymentExecute(Request.Query);
+
+            if (!response.Success || response.VnPayResponseCode != "00")
+                return RedirectToAction("Checkout");
+
+            var userId = await GetCurrentUserIdAsync();
+            if (userId == null)
+                return RedirectToAction("Login", "Account");
+
+            var selected = HttpContext.Session.GetSelectedProducts();
+
+            var cartItems = await _context.CartItems
+                .Include(c => c.Product)
+                .Where(c => c.UserId == userId && selected.Contains(c.ProductId))
+                .ToListAsync();
+
+            if (!cartItems.Any())
+                return RedirectToAction("Cart");
+
+            decimal total = cartItems.Sum(c => c.Product.Price * c.Quantity);
+
+            //Order
+            var order = new Order
+            {
+                UserId = userId.Value,
+                OrderDate = DateTime.UtcNow,
+                Status = OrderStatus.DangXuLy,
+                TotalAmount = total,
+                ShippingAddress = HttpContext.Session.GetString("VNPAY_ADDRESS")
+            };
+
+            _context.Orders.Add(order);
+            await _context.SaveChangesAsync();
+
+            //OrderDetails
+            foreach (var item in cartItems)
+            {
+                _context.OrderDetails.Add(new OrderDetail
+                {
+                    OrderId = order.OrderId,
+                    ProductId = item.ProductId,
+                    Quantity = item.Quantity,
+                    UnitPrice = item.Product.Price
+                });
+            }
+
+            //Payment
+            var payment = new Payment
+            {
+                OrderId = order.OrderId,
+                UserId = userId.Value,
+                Amount = total,
+                PaymentMethod = response.PaymentMethod,
+                PaymentDate = DateTime.UtcNow,
+                VnpayTransactionNo = response.TransactionId
+            };
+
+            _context.Payments.Add(payment);
+            await _context.SaveChangesAsync();
+
+            //Payment History
+            _context.PaymentHistories.Add(new PaymentHistory
+            {
+                PaymentId = payment.PaymentId,
+                TransactionDate = DateTime.UtcNow,
+                Status = "Success",
+                Notes = "Thanh toán VNPAY thành công"
+            });
+
+            //Clear Cart
+            _context.CartItems.RemoveRange(cartItems);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("OrderHistory");
+        }
 
     }
 }

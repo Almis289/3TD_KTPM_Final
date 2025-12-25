@@ -1,21 +1,20 @@
 ﻿using Book_Store.Data;
+using Book_Store.Hubs;
 using Book_Store.Models;
 using Book_Store.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Book_Store.Hubs;
-
+using Book_Store.Services.Implement;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Cấu hình Email
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
-builder.Services.AddSingleton(sp =>
-{
-    var emailSettings = builder.Configuration.GetSection("EmailSettings").Get<EmailSettings>();
-    return new EmailService(emailSettings);
-});
+
+builder.Services.AddScoped<EmailService>();
+builder.Services.AddSingleton<IVnPayService, VnPayService>();
 
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 

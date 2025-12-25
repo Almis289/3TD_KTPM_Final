@@ -6,13 +6,16 @@
 
 <div class="container mt-4">
     <div class="row">
-        <!-- Form gửi email -->
+
+        <!-- ================= FORM SEND EMAIL ================= -->
         <div class="col-md-6">
             <div class="card shadow-sm">
                 <div class="card-header bg-primary text-white">
                     <h4>Gửi Email Marketing</h4>
                 </div>
+
                 <div class="card-body">
+
                     @if (TempData["Message"] != null)
                     {
                         <div class="alert alert-success">@TempData["Message"]</div>
@@ -23,108 +26,203 @@
                     }
 
                     <form asp-action="SendEmailForm" method="post">
+
+                        <!-- SUBJECT -->
                         <div class="mb-3">
-                            <label>Tiêu đề email</label>
-                            <input asp-for="Subject" class="form-control" id="emailTitle" required />
+                            <label class="form-label">Tiêu đề email</label>
+                            <input asp-for="Subject"
+                                   class="form-control"
+                                   id="emailTitle"
+                                   placeholder="Nhập tiêu đề email" />
+                            <span asp-validation-for="Subject" class="text-danger"></span>
                         </div>
 
+                        <!-- CONTENT -->
                         <div class="mb-3">
-                            <label>Nội dung</label>
-                            <textarea asp-for="Content" class="form-control" rows="5" id="emailContent" required></textarea>
+                            <label class="form-label">Nội dung email</label>
+                            <textarea asp-for="Content"
+                                      class="form-control"
+                                      id="emailContent"
+                                      rows="5"
+                                      placeholder="Nhập nội dung email"></textarea>
+                            <span asp-validation-for="Content" class="text-danger"></span>
                         </div>
 
+                        <!-- PRODUCTS -->
                         <div class="mb-3">
-                            <label>Chọn sản phẩm</label>
-                            <select asp-for="ProductId" class="form-control" id="productSelect">
-                                <option value="">-- Không chọn --</option>
+                            <label class="form-label">Chọn sản phẩm (không bắt buộc)</label>
+
+                            <div class="row">
                                 @foreach (var p in Model.Products)
                                 {
-                                    <option value="@p.ProductId" data-image="@p.ImageUrl" data-name="@p.ProductName" data-price="@p.Price" data-description="@p.ProductDetail?.Description">@p.ProductName</option>
+                                    <div class="col-md-6">
+                                        <div class="form-check border rounded p-2 mb-2">
+                                            <input class="form-check-input product-checkbox"
+                                                   type="checkbox"
+                                                   name="SelectedProductIds"
+                                                   value="@p.ProductId"
+                                                   data-name="@p.ProductName"
+                                                   data-price="@p.Price"
+                                                   data-image="@p.ImageUrl" />
+
+                                            <label class="form-check-label">
+                                                <strong>@p.ProductName</strong><br />
+                                                <span class="text-danger">@p.Price.ToString("N0") ₫</span>
+                                            </label>
+                                        </div>
+                                    </div>
                                 }
-                            </select>
+                            </div>
                         </div>
 
+                        <!-- USERS -->
                         <div class="mb-3">
-                            <label>Chọn người nhận</label>
-                            <select asp-for="SelectedEmails" multiple class="form-control">
-                                @foreach (var u in Model.Users)
-                                {
-                                    <option value="@u.Email">@u.Email</option>
-                                }
-                            </select>
-                            <small class="text-muted">Nếu không chọn sẽ gửi cho tất cả</small>
+                            <label class="form-label">Khách hàng trong hệ thống</label>
+
+                            @foreach (var u in Model.Users)
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           name="SelectedEmails"
+                                           value="@u.Email" />
+                                    <label class="form-check-label">@u.Email</label>
+                                </div>
+                            }
                         </div>
 
-                        <button type="submit" class="btn btn-success">Gửi email</button>
+                        <!-- SUBSCRIBE EMAILS -->
+                        <div class="mb-3">
+                            <label class="form-label">Email đã đăng ký nhận bản tin</label>
+
+                            @foreach (var email in Model.SubscribeEmails)
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           name="SelectedEmails"
+                                           value="@email" />
+                                    <label class="form-check-label">@email</label>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- EXTRA EMAILS -->
+                        <div class="mb-3">
+                            <label class="form-label">Email ngoài hệ thống</label>
+                            <input asp-for="ExtraEmails"
+                                   class="form-control"
+                                   placeholder="email1@gmail.com, email2@gmail.com" />
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100">
+                            📧 Gửi Email Marketing
+                        </button>
                     </form>
                 </div>
             </div>
         </div>
 
-        <!-- Live preview email -->
+        <!-- ================= PREVIEW ================= -->
         <div class="col-md-6">
             <div class="card shadow-sm">
                 <div class="card-header bg-secondary text-white">
                     <h4>Preview Email</h4>
                 </div>
+
                 <div class="card-body" style="background:#f4f4f4;">
-                    <div id="previewContainer" style="padding:20px; background:white; border-radius:10px;">
-                        <h2 id="previewTitle" style="color:#333;">[Tiêu đề email]</h2>
-                        <p id="previewContent" style="font-size:16px; line-height:1.6;">[Nội dung email]</p>
-                        <div id="previewProduct" style="margin-top:20px; text-align:center; display:none;">
-                            <h3 id="previewProductName"></h3>
-                            <p id="previewProductPrice"></p>
-                            <p id="previewProductDesc"></p>
-                            <img id="previewProductImg" src="" style="max-width:250px; border-radius:10px;" />
+                    <div id="previewContainer"
+                         style="padding:20px;background:white;border-radius:10px;">
+
+                        <h2 id="previewTitle">[Tiêu đề email]</h2>
+
+                        <p id="previewContent"
+                           style="font-size:16px; line-height:1.6;">
+                            [Nội dung email]
+                        </p>
+
+                        <div id="previewProducts"
+                             style="display:none;margin-top:20px;">
+                            <div class="row" id="previewProductGrid"></div>
                         </div>
+
+
                         <hr />
-                        <p style="font-size:14px; color:gray;">Cảm ơn bạn đã theo dõi Book Store!</p>
+                        <p style="font-size:14px;color:gray;">
+                            Cảm ơn bạn đã theo dõi Book Store!
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
+
     </div>
 </div>
 
 @section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
     <script>
         const emailTitle = document.getElementById('emailTitle');
         const emailContent = document.getElementById('emailContent');
-        const productSelect = document.getElementById('productSelect');
 
         const previewTitle = document.getElementById('previewTitle');
         const previewContent = document.getElementById('previewContent');
-        const previewProduct = document.getElementById('previewProduct');
-        const previewProductName = document.getElementById('previewProductName');
-        const previewProductPrice = document.getElementById('previewProductPrice');
-        const previewProductDesc = document.getElementById('previewProductDesc');
-        const previewProductImg = document.getElementById('previewProductImg');
 
-        // Cập nhật tiêu đề và nội dung
+        const previewProducts = document.getElementById('previewProducts');
+        const previewGrid = document.getElementById('previewProductGrid');
+
+        // Title & content
         emailTitle.addEventListener('input', () => {
             previewTitle.textContent = emailTitle.value || "[Tiêu đề email]";
         });
+
         emailContent.addEventListener('input', () => {
-            previewContent.innerHTML = (emailContent.value || "[Nội dung email]").replace(/\n/g, "<br>");
+            previewContent.innerHTML =
+                (emailContent.value || "[Nội dung email]").replace(/\n/g, "<br>");
         });
 
-        // Cập nhật preview sản phẩm
-        productSelect.addEventListener('change', () => {
-            const selectedOption = productSelect.options[productSelect.selectedIndex];
-            const imageUrl = selectedOption.getAttribute('data-image');
-            const name = selectedOption.getAttribute('data-name');
-            const price = selectedOption.getAttribute('data-price');
-            const desc = selectedOption.getAttribute('data-description');
+        // Product preview
+        document.querySelectorAll('.product-checkbox').forEach(cb => {
+            cb.addEventListener('change', updateProductPreview);
+        });
 
-            if (imageUrl) {
-                previewProductName.textContent = name;
-                previewProductPrice.textContent = `Giá: ${parseFloat(price).toLocaleString()}₫`;
-                previewProductDesc.textContent = desc || "";
-                previewProductImg.src = imageUrl;
-                previewProduct.style.display = 'block';
-            } else {
-                previewProduct.style.display = 'none';
+        function updateProductPreview() {
+            const checked = document.querySelectorAll('.product-checkbox:checked');
+
+            previewGrid.innerHTML = "";
+
+            if (checked.length === 0) {
+                previewProducts.style.display = 'none';
+                return;
             }
-        });
+
+            checked.forEach(cb => {
+                const card = document.createElement('div');
+                card.className = "col-md-6 mb-3";
+
+                card.innerHTML = `
+                    <div style="border:1px solid #ddd;
+                                border-radius:12px;
+                                padding:12px;
+                                text-align:center;">
+                        <img src="${cb.dataset.image}"
+                             style="width:100%;
+                                    height:180px;
+                                    object-fit:cover;
+                                    border-radius:10px;" />
+                        <h6 class="mt-2">${cb.dataset.name}</h6>
+                        <p class="text-danger fw-bold">
+                            ${parseFloat(cb.dataset.price).toLocaleString()} ₫
+                        </p>
+                    </div>
+                `;
+
+                previewGrid.appendChild(card);
+            });
+
+            previewProducts.style.display = 'block';
+        }
     </script>
+
 }

@@ -74,4 +74,25 @@ public class ChatController : Controller
 
         return Json(new { newSessionId = newSession.Id });
     }
+    public async Task<IActionResult> Widget()
+    {
+        string userId = User.FindFirst("UserId")?.Value ?? "";
+
+        var session = await _context.ChatSessions
+            .Include(s => s.Messages)
+            .FirstOrDefaultAsync(s => s.UserId == userId && !s.IsClosed);
+
+        if (session == null)
+        {
+            session = new ChatSession
+            {
+                UserId = userId,
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.ChatSessions.Add(session);
+            await _context.SaveChangesAsync();
+        }
+
+        return View("~/Views/Customer/Chat/Widget.cshtml", session);
+    }
 }
