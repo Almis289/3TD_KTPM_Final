@@ -5,6 +5,7 @@ namespace Book_Store.Models
     {
         public string orderID { get; set; }
         public string payerID { get; set; }
+        public string transactionID { get; set; }
         public decimal amount { get; set; }
 
         public string shippingAddress { get; set; }

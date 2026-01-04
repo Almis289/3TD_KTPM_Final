@@ -54,7 +54,7 @@
                         <p class="mb-1">
                             <strong>Giá:</strong> @book.Price.ToString("N0") đ
                         </p>
-                        <a href="@Url.Action("ProductDetail", "Customer", new { id = book.ProductId })"
+                        <a href="/sach/@book.Slug"
                            class="btn btn-outline-dark btn-sm mt-auto">
                             Xem chi tiết
                         </a>
@@ -112,36 +112,64 @@
     💬
 </div>
 
+<div id="liveChatMenu" class="hidden">
+    <button id="chatAdminBtn" class="chat-option">
+        💬 Chat với Admin
+    </button>
+
+    <a href="https://www.facebook.com/profile.php?id=61586077761193"
+       target="_blank"
+       class="chat-option fb">
+        📘 Chat Facebook
+    </a>
+</div>
 <div id="liveChatBox" class="hidden">
     <div class="livechat-header">
         <span>Hỗ trợ trực tuyến</span>
         <button id="closeChat">✕</button>
     </div>
-
     <iframe src="/Chat/Widget"></iframe>
-
 </div>
+
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
 
         const chatBtn = document.getElementById("liveChatBtn");
+        const menu = document.getElementById("liveChatMenu");
+        const chatAdminBtn = document.getElementById("chatAdminBtn");
         const chatBox = document.getElementById("liveChatBox");
         const closeBtn = document.getElementById("closeChat");
 
-        if (!chatBtn || !chatBox || !closeBtn) {
-            console.error("LiveChat DOM not found");
-            return;
-        }
+        chatBtn.onclick = () => {
 
-        chatBtn.addEventListener("click", () => {
-            chatBox.classList.toggle("hidden");
-        });
+            // Nếu đang mở chat Admin → đóng chat
+            if (!chatBox.classList.contains("hidden")) {
+                chatBox.classList.add("hidden");
+                return;
+            }
 
-        closeBtn.addEventListener("click", () => {
+            // Nếu đang mở menu → đóng menu
+            if (!menu.classList.contains("hidden")) {
+                menu.classList.add("hidden");
+                return;
+            }
+
+            // Nếu đang đóng hết → mở menu
+            menu.classList.remove("hidden");
+        };
+
+        chatAdminBtn.onclick = () => {
+            menu.classList.add("hidden");
+            chatBox.classList.remove("hidden");
+        };
+
+        closeBtn.onclick = () => {
             chatBox.classList.add("hidden");
-        });
+        };
     });
 </script>
+
+
 
 

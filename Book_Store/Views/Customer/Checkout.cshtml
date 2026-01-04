@@ -63,11 +63,6 @@ else
             </div>
 
             <div class="form-check">
-                <input class="form-check-input" type="radio" name="paymentMethod" value="Chuyển khoản">
-                <label class="form-check-label">Chuyển khoản khi nhận hàng</label>
-            </div>
-
-            <div class="form-check">
                 <input class="form-check-input" id="paypalOption" type="radio" name="paymentMethod" value="PayPal">
                 <label class="form-check-label">Thanh toán bằng PayPal</label>
             </div>
@@ -86,7 +81,9 @@ else
        
 
         <div class="d-flex gap-2">
-            <button type="submit" id="btnSubmit" class="btn btn-success">✅ Xác nhận đặt hàng</button>
+            <button type="button" id="btnSubmit" class="btn btn-success">
+                ✅ Xác nhận đặt hàng
+            </button>
             <a asp-action="Cart" class="btn btn-secondary">🔙 Quay lại giỏ hàng</a>
         </div>
     }
@@ -100,6 +97,14 @@ else
     const paypalOption = document.getElementById("paypalOption");
     const vnpayOption = document.getElementById("vnpayOption");
     const paypalSection = document.getElementById("paypal-section");
+    const cartItems = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        Model.Select(i => new {
+            productId = i.Product.ProductId,
+            productName = i.Product.ProductName,
+            price = i.Product.Price / 25000m, // ✅ VND → USD
+            quantity = i.Quantity
+        })
+    ));
 
     // Hiện / ẩn PayPal
     document.querySelectorAll("input[name='paymentMethod']").forEach(radio => {
@@ -110,36 +115,82 @@ else
     });
 
     // XỬ LÝ SUBMIT
-    form.addEventListener("submit", function (e) {
-        if (vnpayOption.checked) {
-            e.preventDefault();
-            form.action = "/Customer/VnpayCreate";
-            form.submit();
+    btnSubmit.addEventListener("click", function () {
+
+        const address = document.getElementById("address").value;
+
+        if (!address || address.trim() === "") {
+            alert("Vui lòng nhập địa chỉ giao hàng");
+            return;
         }
-        else {
+
+        if (paypalOption.checked) {
+            alert("Vui lòng sử dụng nút PayPal để thanh toán");
+            return;
+        }
+
+        if (vnpayOption.checked) {
+            form.action = "/Customer/VnpayCreate";
+        } else {
             form.action = "/Customer/Checkout";
         }
+
+        form.submit();
     });
+
+
+
 
     // PayPal Button
     paypal.Buttons({
         createOrder: (data, actions) => {
+
+            const address = document.getElementById("address").value;
+            if (!address || address.trim() === "") {
+                alert("Vui lòng nhập địa chỉ giao hàng trước khi thanh toán PayPal");
+                return actions.reject();
+            }
+            let totalUSD = cartItems.reduce((sum, i) => {
+                return sum + (i.price * i.quantity);
+            }, 0).toFixed(2);
+
             return actions.order.create({
                 purchase_units: [{
                     amount: {
-                        value: '@(Math.Round(total / 25000, 2))'
-                    }
+                        currency_code: "USD",
+                        value: totalUSD,
+                        breakdown: {
+                            item_total: {
+                                currency_code: "USD",
+                                value: totalUSD
+                            }
+                        }
+                    },
+                    items: cartItems.map(item => ({
+                        name: item.productName,          
+                        unit_amount: {
+                            currency_code: "USD",
+                            value: item.price.toFixed(2)
+                        },
+                        quantity: item.quantity.toString(),
+                        sku: item.productId.toString()     
+                    }))
                 }]
             });
         },
         onApprove: (data, actions) => {
             return actions.order.capture().then(details => {
+
+                const transactionId =
+                    details.purchase_units[0].payments.captures[0].id;
+
                 fetch('/Customer/PaypalSuccess', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         orderID: data.orderID,
                         payerID: data.payerID,
+                        transactionID: transactionId, 
                         amount: @total,
                         shippingAddress: document.getElementById("address").value
                     })
@@ -151,6 +202,7 @@ else
                 });
             });
         }
+
     }).render('#paypal-button-container');
 </script>
 

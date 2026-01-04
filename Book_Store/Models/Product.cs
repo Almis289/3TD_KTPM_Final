@@ -32,6 +32,7 @@ namespace Book_Store.Models
         [ForeignKey("Category")]
         public int CategoryId { get; set; }
         public Category Category { get; set; } = null!;
+        public string Slug { get; set; } = null!;
 
         // Quan hệ 1-1 với ProductDetail
         public ProductDetail ProductDetail { get; set; } = null!;

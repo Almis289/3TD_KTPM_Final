@@ -21,7 +21,9 @@ else
             <div class="card-header bg-light">
                 <strong>Mã đơn hàng:</strong> @order.OrderId
                 <span class="float-end text-muted">@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</span>
+
             </div>
+
             <div class="card-body">
                 <p>
                     <strong>Trạng thái:</strong>
@@ -46,6 +48,24 @@ else
                         <span class="badge bg-danger">Đã hủy</span>
                     }
                 </p>
+                @if (order.Payments != null && order.Payments.Any())
+                {
+                    <p>
+                        <strong>Thanh toán:</strong>
+                        <span class="badge bg-success">
+                            @order.Payments.First().PaymentMethod
+                        </span>
+                    </p>
+                }
+                else
+                {
+                    <p>
+                        <strong>Thanh toán:</strong>
+                        <span class="badge bg-secondary">COD</span>
+                    </p>
+                }
+
+                
                 <table class="table table-sm table-bordered">
                     <thead>
                         <tr>

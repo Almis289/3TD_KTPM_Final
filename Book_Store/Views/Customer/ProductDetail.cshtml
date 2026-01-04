@@ -17,7 +17,7 @@
     string priceText = $"{(Model?.Price ?? 0):N0} đ";
 
     // Tạo URL trang hiện tại
-    string currentUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/Customer/ProductDetail/{Model?.ProductId}";
+    string currentUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/sach/{Model?.Slug}";
 
     // JSON-LD Schema (không còn lỗi)
     var jsonLd = new Dictionary<string, object?>

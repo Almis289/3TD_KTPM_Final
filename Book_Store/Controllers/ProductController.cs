@@ -28,13 +28,13 @@ namespace BookStore.Controllers
         }
 
         // ✅ Hiển thị chi tiết sản phẩm
-        public async Task<IActionResult> Details(int id)
+        public async Task<IActionResult> Details(string slug)
         {
             var product = await _context.Products
                 .Include(p => p.Author)
                 .Include(p => p.Category)
                 .Include(p => p.ProductDetail)
-                .FirstOrDefaultAsync(p => p.ProductId == id);
+                .FirstOrDefaultAsync(p => p.Slug == slug && p.IsActive);
 
             if (product == null)
                 return NotFound();

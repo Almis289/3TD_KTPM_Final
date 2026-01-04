@@ -58,7 +58,14 @@ app.UseSession();           // Kích hoạt session
 app.UseAuthentication();    // Kích hoạt xác thực
 app.UseAuthorization();     // Kích hoạt phân quyền
 
-// ✅ Route mặc định trỏ đến CustomerController → ProductList
+// URL friendly cho sản phẩm
+app.MapControllerRoute(
+    name: "customer-product-detail",
+    pattern: "sach/{slug}",
+    defaults: new { controller = "Customer", action = "ProductDetail" }
+);
+
+// Route mặc định trỏ đến CustomerController → ProductList
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Customer}/{action=Index}/{id?}");

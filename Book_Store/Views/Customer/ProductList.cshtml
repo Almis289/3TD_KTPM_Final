@@ -50,7 +50,7 @@
                         </p>
 
                         <div class="mt-auto d-flex justify-content-between">
-                            <a asp-action="ProductDetail" asp-route-id="@item.ProductId"
+                            <a asp-controller="Customer" asp-action="ProductDetail" asp-route-slug="@item.Slug"
                                class="btn btn-sm btn-outline-primary">
                                 Xem chi tiết
                             </a>

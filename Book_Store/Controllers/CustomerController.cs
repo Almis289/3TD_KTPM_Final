@@ -95,13 +95,13 @@ namespace Book_Store.Controllers
         }
 
 
-        public async Task<IActionResult> ProductDetail(int id)
+        public async Task<IActionResult> ProductDetail(string slug)
         {
             var product = await _context.Products
                 .Include(p => p.Author)
                 .Include(p => p.Category)
                 .Include(p => p.ProductDetail)
-                .FirstOrDefaultAsync(p => p.ProductId == id && p.IsActive);
+                .FirstOrDefaultAsync(p => p.Slug == slug && p.IsActive);
 
             if (product == null)
                 return NotFound();
@@ -114,11 +114,18 @@ namespace Book_Store.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddToCart(int productId, int quantity)
         {
+            // LẤY PRODUCT + SLUG 1 LẦN DUY NHẤT
+            var product = await _context.Products
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.ProductId == productId && p.IsActive);
+
+            if (product == null)
+                return NotFound();
             var userId = await GetCurrentUserIdAsync();
             if (userId == null)
             {
                 // Nếu chưa login -> redirect tới Login kèm returnUrl quay lại ProductDetail
-                var returnUrl = Url.Action("ProductDetail", "Customer", new { id = productId });
+                var returnUrl = Url.Action("ProductDetail", "Customer", new { slug = product!.Slug });
                 return RedirectToAction("Login", "Account", new { returnUrl });
             }
 
@@ -145,7 +152,8 @@ namespace Book_Store.Controllers
             if (!string.IsNullOrEmpty(referer))
                 return Redirect(referer);
 
-            return RedirectToAction("ProductDetail", new { id = productId });
+            return RedirectToAction("ProductDetail", new { slug = product!.Slug });
+
         }
 
         public async Task<IActionResult> Cart()
@@ -330,6 +338,7 @@ namespace Book_Store.Controllers
             var orders = await _context.Orders
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Product)
+                .Include(o => o.Payments)
                 .Where(o => o.UserId == userId.Value)
                 .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
@@ -442,7 +451,7 @@ namespace Book_Store.Controllers
                 .OrderBy(p => p.ProductName)
                 .Select(p => new
                 {
-                    id = p.ProductId,
+                    slug = p.Slug,
                     name = p.ProductName,
                     image = p.ImageUrl
                 })
@@ -616,6 +625,7 @@ namespace Book_Store.Controllers
                 PaymentId = payment.PaymentId,
                 TransactionDate = DateTime.UtcNow,
                 Status = "Success",
+                PaypalTransactionId = data.transactionID,
                 Notes = $"Thanh toán PayPal thành công: {data.orderID}"
             });
 

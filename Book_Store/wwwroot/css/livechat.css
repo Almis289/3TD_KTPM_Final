@@ -78,3 +78,41 @@
         border-radius: 0;
     }
 }
+#liveChatMenu {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 9999;
+}
+
+    #liveChatMenu button,
+    #liveChatMenu a {
+        padding: 10px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        font-weight: 600;
+        text-align: center;
+    }
+
+#chatAdminBtn {
+    background: #0d6efd;
+    color: white;
+}
+
+.fb-chat-btn {
+    background: #1877f2;
+    color: white;
+}
+
+.hidden {
+    display: none;
+}

@@ -29,7 +29,6 @@ namespace Book_Store.Models
 
         public string? PaypalOrderId { get; set; }
         public string? PaypalPayerId { get; set; }
-
         public string? VnpayTransactionNo { get; set; }
 
 

@@ -84,6 +84,26 @@
                     </p>
                     <p class="mb-0"><strong>Số tiền:</strong> @p.Amount.ToString("N0") ₫</p>
                     <p class="mb-0"><strong>Ngày:</strong> @p.PaymentDate.ToString("dd/MM/yyyy HH:mm")</p>
+                    @if (p.PaymentMethod == "PayPal" && p.PaymentHistories.Any())
+                    {
+                        var paypalHistory = p.PaymentHistories
+                        .FirstOrDefault(h => h.PaypalTransactionId != null);
+
+                        if (paypalHistory != null)
+                        {
+                            <p class="mb-0 text-muted">
+                                <strong>PayPal Transaction ID:</strong>
+                                @paypalHistory.PaypalTransactionId
+                            </p>
+                        }
+                    }
+
+                    @if (p.PaymentMethod?.Contains("VNPAY") == true)
+                    {
+                        <p class="mb-0 text-muted">
+                            <strong>VNPAY Transaction No:</strong> @p.VnpayTransactionNo
+                        </p>
+                    }
                 </div>
             }
         }
